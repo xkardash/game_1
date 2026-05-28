@@ -213,8 +213,8 @@ test("selected weapon upgrades mount visible modules and affect projectile visua
       return plasma;
     })(${snapshot.screenX}, ${snapshot.screenY})`);
 
-    assert.equal(snapshot.mountedWeapons, 1);
-    assert.ok(snapshot.plasmaBullets > 0);
+    assert.equal(snapshot.mountedWeapons, 2);
+    assert.ok(snapshot.plasmaBullets > 0 || snapshot.piercingBullets > 0);
     assert.ok(modulePixels > 28);
   } finally {
     await page.close();
@@ -230,6 +230,67 @@ test("boss enemies spawn at threat milestones", async () => {
 
     assert.ok(snapshot.bosses > 0);
     assert.ok(snapshot.hordeEnemies >= snapshot.bosses);
+  } finally {
+    await page.close();
+  }
+});
+
+test("selecting dreadnought cruiser updates player stats and launch button starts game", async () => {
+  const page = await openGamePage();
+  try {
+    // Select Dreadnought
+    await page.evaluate("document.querySelector('#ship-dreadnought').click()");
+    
+    // Check that player state has dreadnought stats (e.g. starting shields = 1)
+    const snapshot = await page.evaluate("window.DalgaSavunmasiTest.snapshot()");
+    assert.equal(snapshot.shields, 1);
+    
+    // Click Görevi Başlat (Launch)
+    await page.evaluate("document.querySelector('#dbLaunchButton').click()");
+    await wait(120);
+    
+    const afterLaunch = await page.evaluate("window.DalgaSavunmasiTest.snapshot()");
+    assert.equal(afterLaunch.phase, "countdown");
+  } finally {
+    await page.close();
+  }
+});
+
+test("clicking hangar button during play ends the run and returns to dashboard lobi", async () => {
+  const page = await openGamePage();
+  try {
+    await page.evaluate("window.DalgaSavunmasiTest.startPlaying()");
+    
+    // Check that hangarReturnButton is visible (not hidden)
+    const buttonHidden = await page.evaluate("document.querySelector('#hangarReturnButton').hidden");
+    assert.equal(buttonHidden, false);
+    
+    // Click hangar return button
+    await page.evaluate("document.querySelector('#hangarReturnButton').click()");
+    await wait(120);
+    
+    const snapshot = await page.evaluate("window.DalgaSavunmasiTest.snapshot()");
+    assert.equal(snapshot.phase, "gameOver");
+  } finally {
+    await page.close();
+  }
+});
+
+test("selecting custom neon trail colors updates the state and active buttons", async () => {
+  const page = await openGamePage();
+  try {
+    // Select Gold trail color
+    await page.evaluate("document.querySelector('#trail-gold').click()");
+    
+    // Check that state.trailColor becomes gold
+    const snapshot = await page.evaluate("window.DalgaSavunmasiTest.snapshot()");
+    assert.equal(snapshot.trailColor, "gold");
+    
+    // Check active class on buttons
+    const activeCyan = await page.evaluate("document.querySelector('#trail-cyan').classList.contains('active')");
+    const activeGold = await page.evaluate("document.querySelector('#trail-gold').classList.contains('active')");
+    assert.equal(activeCyan, false);
+    assert.equal(activeGold, true);
   } finally {
     await page.close();
   }

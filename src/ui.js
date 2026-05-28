@@ -11,6 +11,9 @@
     const bestValue = document.querySelector("#bestValue");
     const upgradePanel = document.querySelector("#upgradePanel");
     const upgradeButtons = [0, 1, 2].map((index) => document.querySelector(`#upgradeChoice${index}`));
+    const hangarReturnButton = document.querySelector("#hangarReturnButton");
+
+    const dashboard = document.querySelector("#dashboard");
 
     function sync(state) {
       const copy = getPhaseCopy(state);
@@ -19,7 +22,27 @@
       waveValue.textContent = String(state.wave);
       xpValue.textContent = `${state.xp}/${state.xpNeeded}`;
       bestValue.textContent = String(state.highScore);
-      overlay.classList.toggle("is-hidden", state.phase === "playing");
+      overlay.classList.toggle("is-hidden", ["playing", "ready", "gameOver"].includes(state.phase));
+      if (dashboard) {
+        dashboard.classList.toggle("is-hidden", !["ready", "gameOver"].includes(state.phase));
+        const aegisBtn = document.querySelector("#ship-aegis");
+        const dreadnoughtBtn = document.querySelector("#ship-dreadnought");
+        if (aegisBtn && dreadnoughtBtn) {
+          const isAegis = (state.selectedShip || "aegis") === "aegis";
+          aegisBtn.classList.toggle("active", isAegis);
+          dreadnoughtBtn.classList.toggle("active", !isAegis);
+        }
+        const colorBtns = ["cyan", "crimson", "acid", "gold"].map(c => document.querySelector(`#trail-${c}`));
+        colorBtns.forEach(btn => {
+          if (btn) {
+            const activeColor = state.trailColor || ((state.selectedShip || "aegis") === "aegis" ? "cyan" : "crimson");
+            btn.classList.toggle("active", btn.getAttribute("data-color") === activeColor);
+          }
+        });
+      }
+      if (hangarReturnButton) {
+        hangarReturnButton.hidden = !["countdown", "playing", "paused", "levelUp"].includes(state.phase);
+      }
       actionButton.textContent = ["countdown", "playing", "paused", "levelUp"].includes(state.phase) ? "Sifirla" : "Baslat";
       phaseLabel.textContent = copy.label;
       phaseTitle.textContent = copy.title;
@@ -34,7 +57,7 @@
       }
     }
 
-    return { actionButton, sync, upgradeButtons };
+    return { actionButton, hangarReturnButton, sync, upgradeButtons };
   }
 
   function getPhaseCopy(state) {

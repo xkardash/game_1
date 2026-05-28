@@ -20,16 +20,20 @@
   const touchInput = { left: false, right: false, up: false, down: false };
   const state = createInitialState();
 
-  function createInitialState(highScore = 0) {
-    const player = rules.createPlayer(world);
+  function createInitialState(highScore = 0, selectedShip = "aegis", trailColor = null) {
+    const player = rules.createPlayer(world, selectedShip);
+    player.trailHistory = [];
     window.HangarSystem.applyBonuses(player, hangar);
     const camera = cameraTools.createCamera(viewport, world);
     cameraTools.updateCamera(camera, player, world, viewport);
+    const actualTrailColor = trailColor || (selectedShip === "aegis" ? "cyan" : "crimson");
     return {
       phase: "ready",
       countdown: 0,
       score: 0,
       highScore,
+      selectedShip,
+      trailColor: actualTrailColor,
       wave: 1,
       level: 1,
       xp: 0,
@@ -37,6 +41,7 @@
       hangar,
       player,
       camera,
+      world,
       bullets: [],
       enemyBullets: [],
       enemies: [],
@@ -63,7 +68,7 @@
   }
 
   function resetRound() {
-    Object.assign(state, createInitialState(state.highScore));
+    Object.assign(state, createInitialState(state.highScore, state.selectedShip || "aegis", state.trailColor));
     spawnHorde(8);
   }
 
@@ -87,6 +92,13 @@
     if (state.phase !== "playing") return;
     updateThreat(delta);
     window.GameMotion.updatePlayer(state, delta, pressedKeys, touchInput, world, rules, lootSystem);
+    if (state.player) {
+      if (!state.player.trailHistory) state.player.trailHistory = [];
+      state.player.trailHistory.push({ x: state.player.x, y: state.player.y });
+      if (state.player.trailHistory.length > 15) {
+        state.player.trailHistory.shift();
+      }
+    }
     updateCamera();
     updateAutoFire(delta);
     window.GameMotion.updateBullets(state, delta, world);
@@ -295,11 +307,34 @@
   }
 
   ui.actionButton.addEventListener("click", startGame);
+  const dbLaunchBtn = document.querySelector("#dbLaunchButton");
+  if (dbLaunchBtn) dbLaunchBtn.addEventListener("click", startGame);
+  const aegisBtn = document.querySelector("#ship-aegis");
+  if (aegisBtn) aegisBtn.addEventListener("click", () => { state.selectedShip = "aegis"; resetRound(); syncInterface(); });
+  const dreadnoughtBtn = document.querySelector("#ship-dreadnought");
+  if (dreadnoughtBtn) dreadnoughtBtn.addEventListener("click", () => { state.selectedShip = "dreadnought"; resetRound(); syncInterface(); });
+
+  if (ui.hangarReturnButton) {
+    ui.hangarReturnButton.addEventListener("click", endGame);
+  }
+
+  const colorBtns = ["cyan", "crimson", "acid", "gold"].map(c => document.querySelector(`#trail-${c}`));
+  colorBtns.forEach(btn => {
+    if (btn) {
+      btn.addEventListener("click", () => {
+        state.trailColor = btn.getAttribute("data-color");
+        resetRound();
+        syncInterface();
+      });
+    }
+  });
+
   for (const button of hangarUi.buttons) button.element.addEventListener("click", () => { if (window.HangarSystem.buyUpgrade(state.hangar, button.id)) syncInterface(); });
   for (const [index, button] of ui.upgradeButtons.entries()) button.addEventListener("click", () => chooseUpgrade(index));
   window.ShooterControls.installControls({ chooseUpgrade, pressedKeys, state, startGame, togglePause, touchInput });
   window.DalgaSavunmasiGame = {
     chooseUpgrade,
+    endGame,
     finishWave,
     forceBoss: spawnBoss,
     grantXp,

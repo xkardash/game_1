@@ -9,7 +9,7 @@ test("tank enemies drop shield loot when destroyed", async () => {
       window.DalgaSavunmasiTest.startPlaying();
       const game = window.DalgaSavunmasiGame;
       const player = game.state.player;
-      game.state.spawnTimer = 99;
+      game.state.spawnDirector.spawnTimer = 99;
       const tank = window.SurvivalRules.createEnemy(game.world, 4, 'tank', player, game.viewport);
       tank.x = player.x + 90;
       tank.y = player.y - 20;
@@ -58,7 +58,7 @@ test("overdrive loot temporarily accelerates automatic fire", async () => {
       window.DalgaSavunmasiTest.startPlaying();
       const game = window.DalgaSavunmasiGame;
       const player = game.state.player;
-      game.state.spawnTimer = 99;
+      game.state.spawnDirector.spawnTimer = 99;
       const tank = window.SurvivalRules.createEnemy(game.world, 4, 'tank', player, game.viewport);
       tank.x = player.x + 360;
       tank.y = player.y - 26;
@@ -90,7 +90,7 @@ test("bosses drop rare cores that can be collected", async () => {
       window.DalgaSavunmasiTest.startPlaying();
       const game = window.DalgaSavunmasiGame;
       const player = game.state.player;
-      game.state.spawnTimer = 99;
+      game.state.spawnDirector.spawnTimer = 99;
       const boss = window.SurvivalRules.createEnemy(game.world, 4, 'boss', player, game.viewport);
       boss.x = player.x + 120;
       boss.y = player.y - 24;

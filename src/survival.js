@@ -18,21 +18,28 @@
   const weaponEvolution = window.WeaponEvolution;
   let nextEnemyId = 1;
 
-  function createPlayer(world) {
+  function createPlayer(world, shipType = "aegis") {
+    const isDreadnought = shipType === "dreadnought";
     return {
       x: world.width / 2,
       y: world.height / 2,
       width: 64,
       height: 56,
-      speed: 300,
+      speed: isDreadnought ? 250 : 315,
       lives: 3,
       cooldown: 0,
       invulnerable: 0,
       lootCores: 0,
       overdrive: 0,
-      shields: 0,
-      stats: { damage: 1, fireRate: 0.32, projectileCount: 1, magnet: 58 },
-      upgrades: [],
+      shields: isDreadnought ? 1 : 0,
+      shipType,
+      stats: {
+        damage: isDreadnought ? 2 : 1,
+        fireRate: isDreadnought ? 0.38 : 0.28,
+        projectileCount: 1,
+        magnet: 58
+      },
+      upgrades: isDreadnought ? ["damage"] : ["rapid"],
     };
   }
 

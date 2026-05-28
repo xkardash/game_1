@@ -8,46 +8,107 @@
     split: "#d7a64f",
   };
 
+  function drawEngineTrail(context, state) {
+    const player = state.player;
+    if (!player.trailHistory || player.trailHistory.length < 2) return;
+    context.save();
+    
+    // Choose trail color based on state.trailColor
+    const activeColor = state.trailColor || ((player.shipType === "dreadnought") ? "crimson" : "cyan");
+    let colorHex = "#4fc3d6"; // default cyan
+    if (activeColor === "crimson") colorHex = "#e8573f";
+    if (activeColor === "acid") colorHex = "#52b69a";
+    if (activeColor === "gold") colorHex = "#f0b84a";
+    
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    
+    for (let index = 1; index < player.trailHistory.length; index += 1) {
+      const p1 = player.trailHistory[index - 1];
+      const p2 = player.trailHistory[index];
+      const ratio = index / player.trailHistory.length;
+      
+      context.beginPath();
+      context.moveTo(p1.x, p1.y);
+      context.lineTo(p2.x, p2.y);
+      
+      context.strokeStyle = colorHex;
+      context.globalAlpha = ratio * 0.35;
+      context.lineWidth = 3 + ratio * 9;
+      context.stroke();
+    }
+    
+    context.restore();
+  }
+
   function drawPlayer(context, state) {
     const player = state.player;
     if (player.invulnerable > 0 && Math.floor(player.invulnerable * 14) % 2 === 0) return;
+    
+    // Draw the visual trail in world space first
+    drawEngineTrail(context, state);
+    
     context.save();
     context.translate(player.x, player.y);
-    drawEngineWake(context, player);
-    drawWingSilhouette(context);
-    drawArmor(context);
+    drawEngineWake(context, player, state);
+    drawWingSilhouette(context, player);
+    drawArmor(context, player);
     drawWeaponBase(context);
     drawUpgradeModules(context, player);
-    drawCore(context);
+    drawCore(context, player);
     drawStatusFields(context, player);
     context.restore();
   }
 
-  function drawEngineWake(context, player) {
+  function drawEngineWake(context, player, state) {
     const boost = getUpgradeLevel(player, "engine");
-    context.globalAlpha = 0.8;
-    context.fillStyle = boost > 0 ? MODULE_COLORS.engine : "#e8573f";
-    drawPath(context, [[-12, 26], [-3, 52 + boost * 8], [0, 31], [3, 52 + boost * 8], [12, 26]]);
+    const activeColor = state?.trailColor || ((player.shipType === "dreadnought") ? "crimson" : "cyan");
+    let colorHex = "#4fc3d6"; // default cyan
+    if (activeColor === "crimson") colorHex = "#e8573f";
+    if (activeColor === "acid") colorHex = "#52b69a";
+    if (activeColor === "gold") colorHex = "#f0b84a";
+
+    context.globalAlpha = 0.85;
+    context.fillStyle = colorHex;
+    drawPath(context, [[-12, 26], [-3, 56 + boost * 9], [0, 32], [3, 56 + boost * 9], [12, 26]]);
     context.globalAlpha = 1;
-    context.fillStyle = "#f0b84a";
-    context.fillRect(-5, 22, 10, 22 + boost * 5);
+    context.fillStyle = "#ffffff";
+    context.fillRect(-4, 22, 8, 20 + boost * 6);
   }
 
-  function drawWingSilhouette(context) {
-    context.fillStyle = "#141b24";
-    drawPath(context, [[0, -45], [-58, -12], [-45, 28], [-16, 18], [0, 38], [16, 18], [45, 28], [58, -12]]);
+  function drawWingSilhouette(context, player) {
+    const isDreadnought = player?.shipType === "dreadnought";
+    context.fillStyle = isDreadnought ? "#201215" : "#141b24";
+    if (isDreadnought) {
+      drawPath(context, [[0, -38], [-68, -4], [-55, 34], [-22, 24], [0, 44], [22, 24], [55, 34], [68, -4]]);
+    } else {
+      drawPath(context, [[0, -45], [-58, -12], [-45, 28], [-16, 18], [0, 38], [16, 18], [45, 28], [58, -12]]);
+    }
   }
 
-  function drawArmor(context) {
-    context.fillStyle = "#33445c";
-    drawPath(context, [[0, -48], [-31, -22], [-24, 22], [0, 37], [24, 22], [31, -22]]);
-    context.fillStyle = "#46627c";
-    drawPath(context, [[0, -38], [-19, -14], [-14, 17], [0, 26], [14, 17], [19, -14]]);
-    context.fillStyle = "#26344a";
-    drawPath(context, [[-42, -8], [-62, 13], [-39, 23], [-18, 9], [-22, -11]]);
-    drawPath(context, [[42, -8], [62, 13], [39, 23], [18, 9], [22, -11]]);
-    context.fillStyle = "rgba(242, 223, 182, 0.22)";
-    drawPath(context, [[-6, -33], [-13, 10], [-4, 25], [2, -24]]);
+  function drawArmor(context, player) {
+    const isDreadnought = player?.shipType === "dreadnought";
+    if (isDreadnought) {
+      context.fillStyle = "#5d3b44";
+      drawPath(context, [[0, -42], [-35, -18], [-28, 26], [0, 40], [28, 26], [35, -18]]);
+      context.fillStyle = "#7b4f5a";
+      drawPath(context, [[0, -32], [-22, -10], [-16, 21], [0, 30], [16, 21], [22, -10]]);
+      context.fillStyle = "#3a1f25";
+      drawPath(context, [[-46, -4], [-68, 17], [-45, 28], [-22, 12], [-26, -8]]);
+      drawPath(context, [[46, -4], [68, 17], [45, 28], [22, 12], [26, -8]]);
+      context.fillStyle = "rgba(240, 184, 74, 0.22)";
+      drawPath(context, [[-6, -27], [-13, 13], [-4, 28], [2, -20]]);
+    } else {
+      context.fillStyle = "#33445c";
+      drawPath(context, [[0, -48], [-31, -22], [-24, 22], [0, 37], [24, 22], [31, -22]]);
+      context.fillStyle = "#46627c";
+      drawPath(context, [[0, -38], [-19, -14], [-14, 17], [0, 26], [14, 17], [19, -14]]);
+      context.fillStyle = "#26344a";
+      drawPath(context, [[-42, -8], [-62, 13], [-39, 23], [-18, 9], [-22, -11]]);
+      drawPath(context, [[42, -8], [62, 13], [39, 23], [18, 9], [22, -11]]);
+      context.fillStyle = "rgba(242, 223, 182, 0.22)";
+      drawPath(context, [[-6, -33], [-13, 10], [-4, 25], [2, -24]]);
+    }
   }
 
   function drawWeaponBase(context) {
@@ -62,7 +123,7 @@
     if (hasUpgrade(player, "rapid")) drawRapidEmitters(context);
     if (hasUpgrade(player, "split")) drawSplitTurrets(context);
     if (hasUpgrade(player, "engine")) drawEnginePods(context);
-    if (hasUpgrade(player, "magnet")) drawMagnetField(context);
+    if (hasUpgrade(player, "magnet")) drawMagnetField(context, player);
     if (hasUpgrade(player, "repair")) drawRepairNodes(context);
     drawSynergyModules(context, player);
   }
@@ -99,14 +160,28 @@
     context.fillRect(15, 20, 11, 18);
   }
 
-  function drawMagnetField(context) {
+  function drawMagnetField(context, player) {
+    const level = getUpgradeLevel(player, "magnet");
+    const time = Date.now() / 320;
+    context.save();
+    
+    // Rotating radar scan line
     context.strokeStyle = MODULE_COLORS.magnet;
-    context.globalAlpha = 0.48;
-    context.lineWidth = 2;
+    context.lineWidth = 1.5;
+    context.globalAlpha = 0.5;
+    
     context.beginPath();
-    context.ellipse(0, 0, 53, 31, 0, 0, Math.PI * 2);
+    context.moveTo(0, 0);
+    context.lineTo(Math.cos(time) * 48, Math.sin(time) * 48);
     context.stroke();
-    context.globalAlpha = 1;
+    
+    // Glowing boundary representing magnet field range
+    context.setLineDash([4, 6]);
+    context.beginPath();
+    context.ellipse(0, 0, 48 + level * 5, 28 + level * 3, 0, 0, Math.PI * 2);
+    context.stroke();
+    
+    context.restore();
   }
 
   function drawRepairNodes(context) {
@@ -142,29 +217,54 @@
     context.fillRect(61, -5, 6, 6);
   }
 
-  function drawCore(context) {
-    context.fillStyle = "#52d6bd";
+  function drawCore(context, player) {
+    const isDreadnought = player?.shipType === "dreadnought";
+    context.fillStyle = isDreadnought ? "#e8573f" : "#52d6bd";
     context.beginPath();
     context.ellipse(0, -11, 12, 16, 0, 0, Math.PI * 2);
     context.fill();
-    context.fillStyle = "rgba(242, 223, 182, 0.52)";
+    context.fillStyle = isDreadnought ? "rgba(240, 184, 74, 0.52)" : "rgba(242, 223, 182, 0.52)";
     context.fillRect(-4, -22, 5, 20);
   }
 
   function drawStatusFields(context, player) {
-    if (player.shields > 0) drawShieldField(context, player.shields);
+    if (player.shields > 0) drawShieldField(context, player.shields, player.invulnerable);
     if (player.overdrive > 0) drawOverdriveField(context);
     if (player.lootCores > 0) drawCoreSockets(context, player.lootCores);
   }
 
-  function drawShieldField(context, shields) {
+  function drawShieldField(context, shields, invulnerable = 0) {
     context.save();
-    context.globalAlpha = 0.24 + shields * 0.08;
-    context.strokeStyle = "#7df8ff";
-    context.lineWidth = 2;
+    
+    const time = Date.now() / 420;
+    const isInvuln = invulnerable > 0;
+    const shieldColor = isInvuln ? "#ffffff" : "#7df8ff";
+    
+    context.strokeStyle = shieldColor;
+    context.shadowColor = shieldColor;
+    context.shadowBlur = isInvuln ? 24 : 10;
+    context.lineWidth = isInvuln ? 3.5 : 2;
+    context.globalAlpha = isInvuln ? 0.9 : 0.35 + shields * 0.08;
+    
     context.beginPath();
-    context.ellipse(0, -2, 70, 48, 0, 0, Math.PI * 2);
+    const radiusX = 72;
+    const radiusY = 50;
+    
+    // Draw rotating hexagonal shield outline
+    for (let index = 0; index < 6; index += 1) {
+      const angle = (index * Math.PI) / 3 + time * 0.16;
+      const x = Math.cos(angle) * radiusX;
+      const y = Math.sin(angle) * radiusY - 2;
+      if (index === 0) context.moveTo(x, y);
+      else context.lineTo(x, y);
+    }
+    context.closePath();
     context.stroke();
+    
+    // Hexagonal matrix pattern fill
+    context.fillStyle = isInvuln ? "rgba(255, 255, 255, 0.15)" : "rgba(125, 248, 255, 0.04)";
+    context.fill();
+    
     context.restore();
   }
 

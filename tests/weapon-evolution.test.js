@@ -13,7 +13,7 @@ test("damage and split upgrades evolve into twin plasma shots", async () => {
       player.stats.damage = 2;
       player.stats.projectileCount = 2;
       player.cooldown = 0;
-      game.state.spawnTimer = 99;
+      game.state.spawnDirector.spawnTimer = 99;
       const enemy = window.SurvivalRules.createEnemy(game.world, 4, 'tank', player, game.viewport);
       enemy.x = player.x + 180;
       enemy.y = player.y - 26;
@@ -50,13 +50,13 @@ test("damage and rapid upgrades evolve into piercing laser shots", async () => {
       player.stats.damage = 2;
       player.stats.projectileCount = 1;
       player.cooldown = 0;
-      game.state.spawnTimer = 99;
+      game.state.spawnDirector.spawnTimer = 99;
       const first = window.SurvivalRules.createEnemy(game.world, 4, 'tank', player, game.viewport);
       const second = window.SurvivalRules.createEnemy(game.world, 4, 'tank', player, game.viewport);
       first.x = player.x + 118;
-      first.y = player.y - 26;
+      first.y = player.y;
       second.x = player.x + 205;
-      second.y = player.y - 26;
+      second.y = player.y;
       first.speed = 0;
       second.speed = 0;
       first.hp = 1;
@@ -72,7 +72,7 @@ test("damage and rapid upgrades evolve into piercing laser shots", async () => {
           piercing: snapshot.piercingBullets,
           remainingEnemies: game.state.enemies.length,
         });
-      }, 360);
+      }, 480);
     })`);
 
     assert.equal(result.evolution, "piercingLaser");
@@ -93,7 +93,7 @@ test("engine and rapid upgrades evolve into drone support shots", async () => {
       player.upgrades = ['engine', 'rapid'];
       player.stats.projectileCount = 1;
       player.cooldown = 0;
-      game.state.spawnTimer = 99;
+      game.state.spawnDirector.spawnTimer = 99;
       const enemy = window.SurvivalRules.createEnemy(game.world, 4, 'tank', player, game.viewport);
       enemy.x = player.x + 420;
       enemy.y = player.y - 12;

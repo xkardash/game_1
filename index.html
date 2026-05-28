@@ -4,6 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Dalga Savunmasi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script src="src/camera.js" defer></script>
     <script src="src/effects.js" defer></script>
@@ -53,6 +56,7 @@
             <input class="volume-slider" id="volumeSlider" type="range" min="0" max="1" step="0.05" aria-label="Ses seviyesi">
           </div>
           <button class="action-button" id="actionButton" type="button">Baslat</button>
+          <button class="action-button secondary" id="hangarReturnButton" type="button" hidden>Hangar</button>
         </div>
       </header>
 
@@ -64,14 +68,6 @@
         <span>En iyi <strong id="bestValue">0</strong></span>
       </section>
 
-      <section class="hangar-panel" aria-label="Hangar kalici gelistirmeleri">
-        <span>Core <strong id="hangarCoreValue">0</strong></span>
-        <button id="hangar-shield" type="button"></button>
-        <button id="hangar-reactor" type="button"></button>
-        <button id="hangar-magnet" type="button"></button>
-        <button id="hangar-scavenger" type="button"></button>
-      </section>
-
       <section class="sector-panel" aria-label="Sektor olayi ve gorev durumu">
         <span>Olay <strong id="sectorEventValue">Sakin</strong></span>
         <span>Tehdit <strong id="threatValue">Dusuk</strong></span>
@@ -80,6 +76,62 @@
       </section>
 
       <section class="game-frame" aria-label="Oyun alani">
+        <!-- Savas Karargahi Arayuzu -->
+        <div class="dashboard" id="dashboard" aria-label="Savas karargahi ve gemi modifikasyonlari">
+          <div class="db-header">
+            <span class="db-eyebrow">Taktik Operasyon Merkezi</span>
+            <h2 class="db-title">Savaş Karargahı</h2>
+          </div>
+
+          <div class="db-grid">
+            <!-- Sol Sutun: Gemi Secimi -->
+            <div class="db-card ship-sec">
+              <h3>Uzay Gemisi Sınıfı Seç</h3>
+              <div class="ship-options">
+                <button class="ship-card active" id="ship-aegis" type="button">
+                  <div class="ship-card-glow"></div>
+                  <div class="ship-card-content">
+                    <span class="ship-title">AEGIS INTERCEPTOR</span>
+                    <span class="ship-specs">Manevra kabiliyeti yüksek hızlı avcı gemisi. Başlangıçta ekstra atış hızı sağlar.</span>
+                  </div>
+                </button>
+                <button class="ship-card" id="ship-dreadnought" type="button">
+                  <div class="ship-card-glow"></div>
+                  <div class="ship-card-content">
+                    <span class="ship-title">DREADNOUGHT CRUISER</span>
+                    <span class="ship-yavaş">Yavaş ama son derece zırhlı ağır kruvazör. Fazladan başlangıç kalkanı taşır.</span>
+                  </div>
+                </button>
+              </div>
+              <div class="trail-color-sec">
+                <h4>Motor İtiş Rengi (Neon Trail Glow)</h4>
+                <div class="trail-color-options">
+                  <button class="trail-color-btn active" id="trail-cyan" type="button" data-color="cyan">Cyan</button>
+                  <button class="trail-color-btn" id="trail-crimson" type="button" data-color="crimson">Crimson</button>
+                  <button class="trail-color-btn" id="trail-acid" type="button" data-color="acid">Acid</button>
+                  <button class="trail-color-btn" id="trail-gold" type="button" data-color="gold">Gold</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sag Sutun: Kalici Hangar -->
+            <div class="db-card hangar-sec">
+              <h3>Hangar Modifikasyonları (Kalıcı)</h3>
+              <div class="db-cores">Core Salvage: <span class="core-highlight"><strong id="hangarCoreValue">0</strong></span></div>
+              <div class="hangar-buttons-grid">
+                <button id="hangar-shield" type="button" class="hangar-upgrade-btn"></button>
+                <button id="hangar-reactor" type="button" class="hangar-upgrade-btn"></button>
+                <button id="hangar-magnet" type="button" class="hangar-upgrade-btn"></button>
+                <button id="hangar-scavenger" type="button" class="hangar-upgrade-btn"></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="db-footer">
+            <button class="db-launch-btn" id="dbLaunchButton" type="button">GÖREVİ BAŞLAT</button>
+          </div>
+        </div>
+
         <canvas id="gameCanvas" width="960" height="540"></canvas>
         <div class="overlay" id="overlay">
           <p id="phaseLabel">Hazir</p>

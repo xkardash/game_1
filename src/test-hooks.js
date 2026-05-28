@@ -8,6 +8,7 @@
     const evolution = window.WeaponEvolution.getWeaponEvolution(state.player);
     return {
       phase: state.phase,
+      trailColor: state.trailColor,
       lives: state.player.lives,
       score: state.score,
       wave: state.wave,
@@ -73,6 +74,7 @@
 
   window.DalgaSavunmasiTest = {
     chooseUpgrade: window.DalgaSavunmasiGame.chooseUpgrade,
+    endGame: window.DalgaSavunmasiGame.endGame,
     finishWave: window.DalgaSavunmasiGame.finishWave,
     forceBoss: window.DalgaSavunmasiGame.forceBoss,
     grantXp: window.DalgaSavunmasiGame.grantXp,
