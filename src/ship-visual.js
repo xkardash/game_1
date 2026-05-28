@@ -55,6 +55,7 @@
     drawArmor(context, player);
     drawWeaponBase(context);
     drawUpgradeModules(context, player);
+    window.RelicVisual?.drawRelics?.(context, player);
     drawCore(context, player);
     drawStatusFields(context, player);
     context.restore();

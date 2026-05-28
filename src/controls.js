@@ -22,7 +22,7 @@
       event.preventDefault();
       if (state.phase === "ready" || state.phase === "gameOver") startGame();
     }
-    if (["Digit1", "Digit2", "Digit3"].includes(event.code) && state.phase === "levelUp") {
+    if (["Digit1", "Digit2", "Digit3"].includes(event.code) && (state.phase === "levelUp" || state.phase === "relicChoice")) {
       options.chooseUpgrade(Number(event.code.replace("Digit", "")) - 1);
     }
   }

@@ -6,6 +6,7 @@
     const state = game.state;
     const screen = window.ShooterCamera.toScreen(state.camera, state.player);
     const evolution = window.WeaponEvolution.getWeaponEvolution(state.player);
+    const relicSynergies = window.RelicSynergy?.getActiveSynergies?.(state.player) || [];
     return {
       phase: state.phase,
       trailColor: state.trailColor,
@@ -43,6 +44,10 @@
       overdriveActive: (state.player.overdrive || 0) > 0,
       overdriveTime: Number((state.player.overdrive || 0).toFixed(2)),
       lootCores: state.player.lootCores || 0,
+      relicChoices: state.relicChoices.length,
+      relicCount: (state.player.relics || []).length,
+      relicFields: (state.relicFields || []).length,
+      relicSynergies: relicSynergies.map((synergy) => synergy.id).join(","),
       mountedWeapons: window.SurvivalRules.getMountedWeaponCount(state.player),
       plasmaBullets: state.bullets.filter((bullet) => bullet.style === "plasma").length,
       weaponEvolution: evolution.id,

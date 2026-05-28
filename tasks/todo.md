@@ -513,3 +513,156 @@ Narrative: The expanded sector should have places, not just coordinates. Landmar
 - File size check: `src\game.js` 293 lines, `src\draw.js` 274, `src\landmark-system.js` 90, `src\landmark-visual.js` 53, `src\sector-ui.js` 20.
 - Security scan: `rg "innerHTML|eval\(|new Function|TODO|Not implemented" index.html styles.css src tests` returned no matches.
 - Browser regression note: browser screenshots were not rerun because the in-app browser tool has not been available in this session and prior headless Chromium runs hit the app usage limit.
+
+### Changed Files Inspection Plan
+- [x] Inspect git status and diff to identify user/game changes.
+- [x] Read changed gameplay/UI files with attention to regressions, missing script links, and unsafe DOM updates.
+- [x] Run fresh syntax, security, file-size, and available regression tests.
+- [x] Document findings and evidence in this section.
+
+Review:
+- Finding: Game-over run summary is opened but covered by the new dashboard. Browser CSS check after `endGame()` returned `dashboardHidden=false`, `summaryHidden=false`, dashboard z-index `10`, summary z-index `3`, and the top element over the summary area was `.db-card ship-sec`.
+- Finding: Dreadnought description uses `class="ship-yavaş"` while the stylesheet defines `.ship-specs`, so that copy misses the intended ship description styling.
+- Verification: `node --check` passed for all `src` and `tests` JavaScript files.
+- Verification: `rg "innerHTML|eval\(|new Function|TODO|FIXME|Not implemented|throw new Error" index.html src tests styles.css` only matched expected test-driver thrown errors.
+- Verification: 39 pure Node tests passed. Targeted browser tests for Dreadnought selection, Hangar return, and trail color passed.
+- File size note: `src/game.js` is 351 lines, `src/ship-visual.js` is 310 lines, `styles.css` is 759 lines.
+
+### Dashboard Summary Fix Plan
+- [x] Add a focused browser regression that proves the game-over summary sits above the dashboard.
+- [x] Fix the game-over/dashboard layering with the smallest CSS change.
+- [x] Fix the Dreadnought ship description class so it uses the existing `.ship-specs` styling.
+- [x] Run syntax, security, pure Node, and targeted browser verification.
+- [x] Record the verification evidence here.
+
+Results:
+- Added browser regression `game over summary stays above the dashboard lobby`; it failed before the fix with `summaryOnTop` as `false`.
+- Raised `.run-summary-panel` above the dashboard by changing its z-index from `3` to `12`.
+- Replaced the Dreadnought description class `ship-yavaş` with the existing `ship-specs` class.
+- Verification: `node --check` passed for all `src` and `tests` JavaScript files.
+- Verification: `rg "innerHTML|eval\(|new Function|TODO|FIXME|Not implemented|ship-yavaş" index.html src tests styles.css` returned no matches.
+- Verification: 39 pure Node tests passed.
+- Verification: 4 targeted browser tests passed for Dreadnought selection, Hangar return, game-over summary layering, and trail color selection.
+
+### Upgrade Codex Plan
+- [x] Add a focused upgrade metadata test for rarity, category, effect text, and synergy preview.
+- [x] Add a browser regression for level-up cards showing rarity/category/synergy instead of plain multiline text.
+- [x] Implement a small `UpgradeCodex` module and wire Survival/UI to it.
+- [x] Style the level-up cards with stable compact rows that fit desktop and mobile.
+- [x] Run syntax, security, pure Node, and targeted browser verification.
+- [x] Record results here.
+
+Results:
+- Added `src/upgrade-codex.js` as the shared source for upgrade rarity, category, effect text, and synergy preview.
+- Level-up cards now render structured rows with rarity, category, title, body, effect, and synergy text using safe DOM APIs.
+- `SurvivalRules.createUpgradeChoices` now uses `UpgradeCodex`, and `game.js` passes the current player so synergy previews can react to owned upgrades.
+- Verification: the new codex unit test failed before implementation because `src/upgrade-codex.js` did not exist.
+- Verification: the new browser UI test failed before implementation because `.upgrade-category` did not exist on the card.
+- Verification: `node --check` passed for all `src` and `tests` JavaScript files.
+- Verification: `rg "innerHTML|eval\(|new Function|TODO|FIXME|Not implemented|ship-yavaş" index.html src tests styles.css` returned no matches.
+- Verification: 40 pure Node tests passed.
+- Verification: 5 targeted browser tests passed for XP level-up, enriched card UI, upgrade selection, visible weapon modules, and game-over summary layering.
+
+### Ship Stats Panel Plan
+- [x] Add a focused stat-system unit test for damage, fire rate, speed, magnet, shield, weapon, and synergy rows.
+- [x] Add a browser regression proving dashboard stats and runtime stats are visible in the right phases.
+- [x] Implement a shared `StatSystem` module so UI text and tests use the same stat formatting.
+- [x] Add a dashboard "Gemi Statları" card and a compact in-run stat overlay.
+- [x] Run syntax, security, pure Node, and targeted browser verification.
+- [x] Record results here.
+
+Results:
+- Added `src/stat-system.js` to format damage, fire rate, projectile count, speed, magnet range, shields, weapon, and synergy rows.
+- Added dashboard stat card `#dashboardStatsList` and in-run compact panel `#runtimeStatsPanel`.
+- Stat panels use safe DOM rendering with `textContent` and `replaceChildren`; no HTML string injection.
+- Verification: the new stat-system unit test failed before implementation because `src/stat-system.js` did not exist.
+- Verification: the new browser test failed before implementation because dashboard stat values were empty.
+- Verification: `node --check` passed for all `src` and `tests` JavaScript files.
+- Verification: `rg "innerHTML|eval\(|new Function|TODO|FIXME|Not implemented|ship-yavaş" index.html src tests styles.css` returned no matches.
+- Verification: 41 pure Node tests passed.
+- Verification: 7 targeted browser tests passed for level-up, enriched card UI, upgrade selection, weapon modules, Dreadnought launch, stat panels, and game-over summary layering.
+
+### Boss Relic Plan
+- [x] Add a focused relic-system unit test for relic choices and stat application.
+- [x] Add a browser regression proving boss death opens a three-choice relic reward and selection resumes play.
+- [x] Implement a shared `RelicSystem` module with boss-tier reward metadata and application effects.
+- [x] Add a `relicChoice` phase to game, UI, keyboard controls, and test hooks.
+- [x] Style relic cards distinctly while reusing the existing upgrade choice panel.
+- [x] Run syntax, security, pure Node, and targeted browser verification.
+- [x] Record results here.
+
+Results:
+- Added `src/relic-system.js` with boss-tier relic metadata and effects for shield, damage, magnet/core, and phase injector rewards.
+- Boss death now opens `relicChoice`, shows three relic cards in the existing choice panel, and resumes play after selection.
+- Keyboard digits 1-3 now work for both level-up choices and boss relic choices.
+- Test hooks now expose `relicChoices` and `relicCount` for browser regression checks.
+- Verification: the relic unit test failed before implementation because `src/relic-system.js` did not exist.
+- Verification: the boss browser test failed before implementation because boss death stayed in `playing` instead of `relicChoice`.
+- Verification: `node --check` passed for all `src` and `tests` JavaScript files.
+- Verification: `rg "innerHTML|eval\(|new Function|TODO|FIXME|Not implemented|ship-yavaş" index.html src tests styles.css` returned no matches.
+- Verification: 42 pure Node tests passed.
+- Verification: 8 targeted browser tests passed for level-up, enriched card UI, upgrade selection, weapon modules, boss relic reward, Dreadnought launch, stat panels, and game-over summary layering.
+
+### Runtime Stats Toggle Plan
+- [x] Capture the UX correction in `tasks/lessons.md`.
+- [x] Add a browser regression proving runtime stats start collapsed and can be opened/closed.
+- [x] Add a compact runtime stats toggle button without changing dashboard stats.
+- [x] Keep stat rendering safe with `textContent` and avoid rendering the hidden panel every frame.
+- [x] Run syntax, security, pure Node, and targeted browser verification.
+- [x] Record results here.
+
+Results:
+- Added `#runtimeStatsToggle` as a compact in-run `STAT +` / `STAT -` button.
+- Runtime stats now start collapsed during gameplay and can be opened/closed without changing dashboard stats.
+- Updated browser regression so it verifies closed, open, and closed-again states.
+- Updated `tasks/lessons.md` with the rule that in-run secondary panels should default to compact/collapsed UI.
+- Verification: the updated browser test failed before implementation because `#runtimeStatsToggle` did not exist.
+- Verification: `node --check` passed for all `src` and `tests` JavaScript files.
+- Verification: `rg "innerHTML|eval\(|new Function|TODO|FIXME|Not implemented|ship-yavaş" index.html src tests styles.css` returned no matches.
+- Verification: 42 pure Node tests passed.
+- Verification: 4 targeted browser tests passed for stat toggle, boss relic reward, Dreadnought launch, and game-over summary layering.
+
+### Relic Visual Attachment Plan
+- [x] Add a stat-system regression proving equipped relic names appear as a stat row.
+- [x] Add a browser regression proving a selected boss relic appears in runtime stats and leaves visible relic pixels on the ship.
+- [x] Implement a small `RelicVisual` module and call it from ship drawing without growing `ship-visual.js` further.
+- [x] Add a small boss reward burst when relic choices open.
+- [x] Run syntax, security, pure Node, and targeted browser verification.
+- [x] Record results here.
+
+Results:
+- Added `src/relic-visual.js` so equipped boss relics add visible hardware to the player ship: gold armor plates, nova core glow, siphon ring, and phase injector pods.
+- The ship renderer now calls `RelicVisual.drawRelics()` after normal upgrade modules, keeping relic artwork separate from the already-large ship visual file.
+- Runtime and dashboard stat rows now include equipped relic names plus a `Boss Relic xN` detail line.
+- Boss kills now emit a short gold reward burst before opening relic choices.
+- Verification: the stat-system regression failed before implementation because the `relics` stat row did not exist.
+- Verification: the boss browser regression failed before implementation because the selected relic was not visible in runtime stats.
+- Verification: `node --check` passed for all `src` and `tests` JavaScript files.
+- Verification: `rg "innerHTML|eval\(|new Function|TODO|FIXME|Not implemented|ship-yavaÅŸ" index.html src tests styles.css` returned no matches.
+- Verification: 42 pure Node tests passed.
+- Verification: 4 targeted browser tests passed for boss relic reward/readout/ship pixels, stat toggle, visible weapon modules, and game-over summary layering.
+
+### Relic Build Evolution Plan
+- [x] Add pure Node tests for relic+upgrade build rules: Nova Lance, Void Field, and Phase Burst.
+- [x] Add browser regressions proving the new builds affect bullets, enemy damage, and exposed runtime state.
+- [x] Watch the new tests fail before production changes.
+- [x] Implement a small `RelicSynergy` module instead of growing weapon or relic files.
+- [x] Wire Nova Lance and Phase Burst into weapon profiles and projectile drawing.
+- [x] Wire Void Field into combat updates with a readable canvas effect.
+- [x] Expose active relic build names in stats/test hooks.
+- [x] Run syntax, security, and pure Node verification.
+- [ ] Run targeted browser verification when headless Chromium usage is available.
+- [x] Record results here.
+
+Results:
+- Added `src/relic-synergy.js` with three relic+upgrade build evolutions: `Nova Lance`, `Void Field`, and `Phase Burst`.
+- `Nova Cekirdegi + Hasar` now evolves the projectile profile into `novaLance`, adds area impact damage, and draws a brighter lance core.
+- `Bosluk Sifonu + Cekim` now pulses a damaging field around the ship and draws a visible field ring.
+- `Faz Enjektoru + Rapid` now evolves shots into fast piercing `phaseShot` projectiles with a separate projectile visual module.
+- Active relic synergies now appear in stat synergy text and test snapshots.
+- RED evidence: `tests/relic-synergy.test.js` first failed because `src/relic-synergy.js` did not exist.
+- RED evidence: `tests/relic-builds.test.js` failed because `novaCore+damage` still produced `plasma`, `phaseInjector+rapid` still produced `laser`, and `voidField` was absent from runtime state.
+- Verification: `node --check` passed for all `src` and `tests` JavaScript files.
+- Verification: `rg "innerHTML|eval\(|new Function|TODO|FIXME|Not implemented|ship-yava" index.html src tests styles.css` returned no matches.
+- Verification: 45 pure Node tests passed.
+- Verification gap: targeted browser verification could not be rerun after implementation because the headless Chromium escalation was rejected by the app usage limit. The browser regression file remains in `tests/relic-builds.test.js` for the next available run.

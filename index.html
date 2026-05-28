@@ -14,8 +14,12 @@
     <script src="src/combat-juice.js" defer></script>
     <script src="src/game-feedback.js" defer></script>
     <script src="src/hangar-system.js" defer></script>
+    <script src="src/relic-synergy.js" defer></script>
     <script src="src/loot-system.js" defer></script>
     <script src="src/weapon-evolution.js" defer></script>
+    <script src="src/upgrade-codex.js" defer></script>
+    <script src="src/stat-system.js" defer></script>
+    <script src="src/relic-system.js" defer></script>
     <script src="src/run-summary.js" defer></script>
     <script src="src/sector-events.js" defer></script>
     <script src="src/mission-system.js" defer></script>
@@ -33,6 +37,8 @@
     <script src="src/hangar-ui.js" defer></script>
     <script src="src/enemy-visual.js" defer></script>
     <script src="src/pickup-visual.js" defer></script>
+    <script src="src/projectile-visual.js" defer></script>
+    <script src="src/relic-visual.js" defer></script>
     <script src="src/ship-visual.js" defer></script>
     <script src="src/radar-visual.js" defer></script>
     <script src="src/juice-visual.js" defer></script>
@@ -99,7 +105,7 @@
                   <div class="ship-card-glow"></div>
                   <div class="ship-card-content">
                     <span class="ship-title">DREADNOUGHT CRUISER</span>
-                    <span class="ship-yavaş">Yavaş ama son derece zırhlı ağır kruvazör. Fazladan başlangıç kalkanı taşır.</span>
+                    <span class="ship-specs">Yavaş ama son derece zırhlı ağır kruvazör. Fazladan başlangıç kalkanı taşır.</span>
                   </div>
                 </button>
               </div>
@@ -125,6 +131,11 @@
                 <button id="hangar-scavenger" type="button" class="hangar-upgrade-btn"></button>
               </div>
             </div>
+
+            <div class="db-card stats-sec">
+              <h3>Gemi Statları</h3>
+              <div class="stat-grid dashboard-stat-grid" id="dashboardStatsList" aria-live="polite"></div>
+            </div>
           </div>
 
           <div class="db-footer">
@@ -133,6 +144,8 @@
         </div>
 
         <canvas id="gameCanvas" width="960" height="540"></canvas>
+        <button class="runtime-stats-toggle" id="runtimeStatsToggle" type="button" aria-controls="runtimeStatsPanel" aria-expanded="false" hidden>STAT +</button>
+        <aside class="runtime-stats-panel" id="runtimeStatsPanel" aria-label="Canli gemi statlari" hidden></aside>
         <div class="overlay" id="overlay">
           <p id="phaseLabel">Hazir</p>
           <h2 id="phaseTitle">Uzay hattini koru</h2>

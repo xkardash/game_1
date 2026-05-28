@@ -175,6 +175,33 @@ test("xp collection opens a three-choice upgrade level-up", async () => {
   }
 });
 
+test("level-up cards show rarity, category, effect, and synergy context", async () => {
+  const page = await openGamePage();
+  try {
+    await page.evaluate("window.DalgaSavunmasiTest.startPlaying()");
+    await page.evaluate("window.DalgaSavunmasiTest.grantXp(999)");
+
+    const card = await page.evaluate(`(() => {
+      const first = document.querySelector("#upgradeChoice0");
+      return {
+        rarity: first.dataset.rarity,
+        category: first.querySelector(".upgrade-category").textContent,
+        effect: first.querySelector(".upgrade-effect").textContent,
+        synergy: first.querySelector(".upgrade-synergy").textContent,
+        whiteSpace: getComputedStyle(first).whiteSpace,
+      };
+    })()`);
+
+    assert.equal(card.rarity, "epic");
+    assert.equal(card.category, "Silah");
+    assert.equal(card.effect, "Hasar +1");
+    assert.match(card.synergy, /Delici Lazer/);
+    assert.equal(card.whiteSpace, "normal");
+  } finally {
+    await page.close();
+  }
+});
+
 test("selecting an upgrade applies the stat and resumes play", async () => {
   const page = await openGamePage();
   try {
@@ -235,6 +262,80 @@ test("boss enemies spawn at threat milestones", async () => {
   }
 });
 
+test("defeating a boss opens a three-choice boss relic reward", async () => {
+  const page = await openGamePage();
+  try {
+    await page.evaluate(`(() => {
+      window.DalgaSavunmasiTest.startPlaying();
+      const game = window.DalgaSavunmasiGame;
+      const player = game.state.player;
+      const boss = window.SurvivalRules.createEnemy(game.world, 4, 'boss', player, game.viewport);
+      boss.x = player.x + 120;
+      boss.y = player.y - 24;
+      boss.speed = 0;
+      boss.hp = 1;
+      game.state.enemies = [boss];
+      game.state.bullets = [{ x: boss.x, y: boss.y, width: 14, height: 14, damage: 99, vx: 0, vy: 0, life: 1 }];
+    })()`);
+    await wait(160);
+
+    const relicPhase = await page.evaluate(`(() => {
+      const first = document.querySelector("#upgradeChoice0");
+      return {
+        phase: window.DalgaSavunmasiTest.snapshot().phase,
+        choices: window.DalgaSavunmasiTest.snapshot().relicChoices,
+        rarity: first.dataset.rarity,
+        title: first.querySelector(".relic-title")?.textContent || "",
+        effect: first.querySelector(".relic-effect")?.textContent || "",
+      };
+    })()`);
+
+    assert.equal(relicPhase.phase, "relicChoice");
+    assert.equal(relicPhase.choices, 3);
+    assert.equal(relicPhase.rarity, "boss");
+    assert.match(relicPhase.title, /Yildiz Zirhi/);
+    assert.equal(relicPhase.effect, "Kalkan +1");
+
+    const beforeChoice = await page.evaluate("window.DalgaSavunmasiTest.snapshot()");
+    await page.evaluate("window.DalgaSavunmasiTest.chooseUpgrade(0)");
+    await wait(220);
+    const afterChoice = await page.evaluate("window.DalgaSavunmasiTest.snapshot()");
+
+    assert.equal(afterChoice.phase, "playing");
+    assert.equal(afterChoice.relicCount, beforeChoice.relicCount + 1);
+    assert.equal(afterChoice.shields, beforeChoice.shields + 1);
+
+    await page.evaluate("document.querySelector('#runtimeStatsToggle').click()");
+    const relicReadout = await page.evaluate(`(() => {
+      const row = document.querySelector("#runtimeStatsPanel [data-stat-key='relics']");
+      return {
+        value: row?.querySelector(".stat-value")?.textContent || "",
+        detail: row?.querySelector(".stat-detail")?.textContent || "",
+      };
+    })()`);
+    assert.equal(relicReadout.value, "Yildiz Zirhi");
+    assert.equal(relicReadout.detail, "Boss Relic x1");
+
+    const relicPixels = await page.evaluate(`(() => {
+      const game = window.DalgaSavunmasiGame;
+      const snapshot = window.DalgaSavunmasiTest.snapshot();
+      const context = gameCanvas.getContext('2d');
+      const data = context.getImageData(snapshot.screenX - 78, snapshot.screenY - 52, 156, 110).data;
+      let armorPixels = 0;
+      for (let index = 0; index < data.length; index += 4) {
+        const red = data[index];
+        const green = data[index + 1];
+        const blue = data[index + 2];
+        if (red > 205 && green > 150 && green < 230 && blue > 70 && blue < 150) armorPixels += 1;
+      }
+      return armorPixels;
+    })()`);
+    assert.ok(relicPixels > 22);
+  } finally {
+    await page.close();
+  }
+});
+
 test("selecting dreadnought cruiser updates player stats and launch button starts game", async () => {
   const page = await openGamePage();
   try {
@@ -256,6 +357,77 @@ test("selecting dreadnought cruiser updates player stats and launch button start
   }
 });
 
+test("dashboard and runtime panels show live ship stats", async () => {
+  const page = await openGamePage();
+  try {
+    await page.evaluate("document.querySelector('#ship-dreadnought').click()");
+    const dashboardStats = await page.evaluate(`(() => {
+      const damage = document.querySelector("#dashboardStatsList [data-stat-key='damage'] .stat-value");
+      const shield = document.querySelector("#dashboardStatsList [data-stat-key='shield'] .stat-value");
+      const weapon = document.querySelector("#dashboardStatsList [data-stat-key='weapon'] .stat-value");
+      return {
+        damage: damage?.textContent || "",
+        shield: shield?.textContent || "",
+        weapon: weapon?.textContent || "",
+      };
+    })()`);
+
+    assert.equal(dashboardStats.damage, "2.0");
+    assert.equal(dashboardStats.shield, "1");
+    assert.equal(dashboardStats.weapon, "Plazma");
+
+    await page.evaluate("window.DalgaSavunmasiTest.startPlaying()");
+    await wait(120);
+    const runtimeStatsClosed = await page.evaluate(`(() => {
+      const panel = document.querySelector("#runtimeStatsPanel");
+      const toggle = document.querySelector("#runtimeStatsToggle");
+      return {
+        panelHidden: panel.hidden,
+        toggleHidden: toggle.hidden,
+        expanded: toggle.getAttribute("aria-expanded"),
+      };
+    })()`);
+
+    assert.equal(runtimeStatsClosed.panelHidden, true);
+    assert.equal(runtimeStatsClosed.toggleHidden, false);
+    assert.equal(runtimeStatsClosed.expanded, "false");
+
+    await page.evaluate("document.querySelector('#runtimeStatsToggle').click()");
+    const runtimeStatsOpen = await page.evaluate(`(() => {
+      const panel = document.querySelector("#runtimeStatsPanel");
+      const toggle = document.querySelector("#runtimeStatsToggle");
+      const speed = panel.querySelector("[data-stat-key='speed'] .stat-value");
+      const fireRate = panel.querySelector("[data-stat-key='fireRate'] .stat-value");
+      return {
+        panelHidden: panel.hidden,
+        expanded: toggle.getAttribute("aria-expanded"),
+        speed: speed?.textContent || "",
+        fireRate: fireRate?.textContent || "",
+      };
+    })()`);
+
+    assert.equal(runtimeStatsOpen.panelHidden, false);
+    assert.equal(runtimeStatsOpen.expanded, "true");
+    assert.equal(runtimeStatsOpen.speed, "250");
+    assert.equal(runtimeStatsOpen.fireRate, "2.6/sn");
+
+    await page.evaluate("document.querySelector('#runtimeStatsToggle').click()");
+    const runtimeStatsClosedAgain = await page.evaluate(`(() => {
+      const panel = document.querySelector("#runtimeStatsPanel");
+      const toggle = document.querySelector("#runtimeStatsToggle");
+      return {
+        panelHidden: panel.hidden,
+        expanded: toggle.getAttribute("aria-expanded"),
+      };
+    })()`);
+
+    assert.equal(runtimeStatsClosedAgain.panelHidden, true);
+    assert.equal(runtimeStatsClosedAgain.expanded, "false");
+  } finally {
+    await page.close();
+  }
+});
+
 test("clicking hangar button during play ends the run and returns to dashboard lobi", async () => {
   const page = await openGamePage();
   try {
@@ -271,6 +443,34 @@ test("clicking hangar button during play ends the run and returns to dashboard l
     
     const snapshot = await page.evaluate("window.DalgaSavunmasiTest.snapshot()");
     assert.equal(snapshot.phase, "gameOver");
+  } finally {
+    await page.close();
+  }
+});
+
+test("game over summary stays above the dashboard lobby", async () => {
+  const page = await openGamePage();
+  try {
+    await page.evaluate("window.DalgaSavunmasiTest.startPlaying(); window.DalgaSavunmasiTest.endGame();");
+    await wait(120);
+
+    const layer = await page.evaluate(`(() => {
+      const dashboard = document.querySelector("#dashboard");
+      const summaryPanel = document.querySelector("#runSummaryPanel");
+      const rect = summaryPanel.getBoundingClientRect();
+      const topElement = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      return {
+        phase: window.DalgaSavunmasiTest.snapshot().phase,
+        dashboardHidden: dashboard.classList.contains("is-hidden"),
+        summaryHidden: summaryPanel.hidden,
+        summaryOnTop: Boolean(topElement && topElement.closest("#runSummaryPanel")),
+      };
+    })()`);
+
+    assert.equal(layer.phase, "gameOver");
+    assert.equal(layer.dashboardHidden, false);
+    assert.equal(layer.summaryHidden, false);
+    assert.equal(layer.summaryOnTop, true);
   } finally {
     await page.close();
   }

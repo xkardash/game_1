@@ -39,11 +39,13 @@
   function updateCoreSynergies(state, effects, delta, destroyEnemy) {
     updateBurningEnemies(state, effects, delta, destroyEnemy);
     updateTimedList(state.chainArcs || [], delta);
+    window.RelicSynergy?.updateCombatFields?.(state, effects, delta, destroyEnemy);
   }
 
-  function applyBulletSynergies(state, bullet, enemy, effects) {
+  function applyBulletSynergies(state, bullet, enemy, effects, destroyEnemy = null) {
     if (bullet.burnTime > 0) igniteEnemy(enemy, bullet);
     if (bullet.chainsLeft > 0) arcToNearbyEnemy(state, bullet, enemy, effects);
+    window.RelicSynergy?.applyBulletImpact?.(state, bullet, enemy, effects, destroyEnemy);
   }
 
   function collectLootDrops(state, grantXp, grantCore = () => {}, onCollect = () => {}) {

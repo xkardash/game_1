@@ -47,6 +47,7 @@
       enemies: [],
       lootDrops: [],
       chainArcs: [],
+      relicFields: [],
       xpGems: [],
       sector: window.SectorEvents.createSectorState(),
       mission: window.MissionSystem.createMissionState(),
@@ -63,6 +64,7 @@
       shotsFired: 0,
       runStats: window.RunSummary.createRunStats(),
       upgradeChoices: [],
+      relicChoices: [],
       lastFrameTime: 0,
     };
   }
@@ -177,7 +179,7 @@
     effects.addImpactFlash(state, enemy.x, enemy.y, enemy.type === "boss" ? "#f0b84a" : "#e8573f");
     effects.emitParticles(state, enemy.x, enemy.y, "#e8573f", enemy.type === "boss" ? 20 : 10, { life: 0.34, size: 3 });
     feedback.enemyHit(state, enemy);
-    lootSystem.applyBulletSynergies(state, bullet, enemy, effects);
+    lootSystem.applyBulletSynergies(state, bullet, enemy, effects, destroyEnemy);
     if (enemy.hp <= 0) destroyEnemy(enemy);
   }
 
@@ -189,6 +191,11 @@
     if (enemy.type === "bomber") enemySystem.explodeBomber(state, enemy, effects, damagePlayer);
     lootSystem.dropLoot(state, enemy);
     state.xpGems.push(rules.createXpGem(enemy.x, enemy.y, enemy.xp));
+    if (enemy.type === "boss") {
+      effects.emitParticles(state, enemy.x, enemy.y, "#f0b84a", 34, { life: 0.68, size: 4 });
+      window.CombatJuice.addPing(state, "loot", enemy.x, enemy.y);
+      openRelicChoice();
+    }
   }
 
   function collectXpGem(gem) {
@@ -233,15 +240,36 @@
     state.level += 1;
     state.xpNeeded = Math.ceil(state.xpNeeded * 1.35 + 2);
     state.phase = "levelUp";
-    state.upgradeChoices = rules.createUpgradeChoices(state.level);
+    state.upgradeChoices = rules.createUpgradeChoices(state.level, state.player);
     feedback.levelUp(state);
   }
 
   function chooseUpgrade(index) {
+    if (state.phase === "relicChoice") {
+      chooseRelic(index);
+      return;
+    }
     const upgrade = state.upgradeChoices[index];
     if (!upgrade || state.phase !== "levelUp") return;
     rules.applyUpgrade(state.player, upgrade);
     state.upgradeChoices = [];
+    state.phase = "playing";
+    syncInterface();
+  }
+
+  function openRelicChoice() {
+    state.phase = "relicChoice";
+    state.relicChoices = window.RelicSystem.createRelicChoices(state);
+    state.upgradeChoices = [];
+    feedback.levelUp(state);
+    syncInterface();
+  }
+
+  function chooseRelic(index) {
+    const relic = state.relicChoices[index];
+    if (!relic || state.phase !== "relicChoice") return;
+    window.RelicSystem.applyRelic(state, relic);
+    state.relicChoices = [];
     state.phase = "playing";
     syncInterface();
   }
@@ -334,6 +362,7 @@
   window.ShooterControls.installControls({ chooseUpgrade, pressedKeys, state, startGame, togglePause, touchInput });
   window.DalgaSavunmasiGame = {
     chooseUpgrade,
+    chooseRelic,
     endGame,
     finishWave,
     forceBoss: spawnBoss,

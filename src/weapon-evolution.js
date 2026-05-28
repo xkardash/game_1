@@ -58,12 +58,14 @@
 
   function getWeaponEvolution(player) {
     const synergies = getSynergyIds(player);
-    if (synergies.includes("piercingLaser")) return withSynergies(PROFILES.piercingLaser, synergies, player);
-    if (synergies.includes("twinPlasma")) return withSynergies(PROFILES.twinPlasma, synergies, player);
-    if (synergies.includes("droneSupport")) return withSynergies(PROFILES.droneSupport, synergies, player);
-    if (hasUpgrade(player, "damage")) return withSynergies(PROFILES.plasma, synergies, player);
-    if (hasUpgrade(player, "rapid")) return withSynergies(PROFILES.laser, synergies, player);
-    return withSynergies(PROFILES.pulse, synergies, player);
+    let profile = PROFILES.pulse;
+    if (synergies.includes("piercingLaser")) profile = PROFILES.piercingLaser;
+    else if (synergies.includes("twinPlasma")) profile = PROFILES.twinPlasma;
+    else if (synergies.includes("droneSupport")) profile = PROFILES.droneSupport;
+    else if (hasUpgrade(player, "damage")) profile = PROFILES.plasma;
+    else if (hasUpgrade(player, "rapid")) profile = PROFILES.laser;
+    const evolved = withSynergies(profile, synergies, player);
+    return window.RelicSynergy?.enhanceWeaponProfile?.(evolved, player) || evolved;
   }
 
   function getSynergyIds(player) {

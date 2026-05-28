@@ -1,12 +1,4 @@
 (() => {
-  const UPGRADE_POOL = [
-    { id: "rapid", title: "Seri Lazer", body: "Ates hizi artar.", stat: "fireRate", amount: -0.045 },
-    { id: "split", title: "Cift Namlu", body: "Bir mermi daha cikar.", stat: "projectileCount", amount: 1 },
-    { id: "damage", title: "Plazma Basinc", body: "Mermi hasari artar.", stat: "damage", amount: 1 },
-    { id: "engine", title: "Iyon Motoru", body: "Mekik daha hizli gider.", stat: "speed", amount: 34 },
-    { id: "magnet", title: "Cekim Alani", body: "XP daha uzaktan toplanir.", stat: "magnet", amount: 26 },
-    { id: "repair", title: "Tamir Kiti", body: "Can yenilenir.", stat: "repair", amount: 1 },
-  ];
   const WEAPON_UPGRADES = new Set(["damage", "rapid", "split"]);
   const ENEMY_ROLES = {
     bomber: { width: 42, height: 38, hp: 3, speed: 104, xp: 2, score: 120, pulseRate: 6.8, blastRadius: 118 },
@@ -15,6 +7,7 @@
     tank: { width: 58, height: 48, hp: 7, speed: 58, xp: 3, score: 190, pulseRate: 3.8 },
   };
   const ROLE_SEQUENCE = ["scout", "tank", "sniper", "bomber"];
+  const upgradeCodex = window.UpgradeCodex;
   const weaponEvolution = window.WeaponEvolution;
   let nextEnemyId = 1;
 
@@ -31,6 +24,7 @@
       invulnerable: 0,
       lootCores: 0,
       overdrive: 0,
+      relics: [],
       shields: isDreadnought ? 1 : 0,
       shipType,
       stats: {
@@ -141,6 +135,7 @@
     const isDrone = origin === "drone" || origin === "coreDrone";
     const isCoreDrone = origin === "coreDrone";
     const speed = isDrone ? profile.droneSpeed : profile.speed;
+    const damage = player.stats.damage * (profile.damageScale || 1) * damageScale;
     return {
       x: player.x + offsetX,
       y: player.y + offsetY,
@@ -148,8 +143,10 @@
       vy: direction.y * speed,
       width: isDrone ? 6 : profile.size,
       height: isDrone ? 6 : profile.size,
-      damage: player.stats.damage * (profile.damageScale || 1) * damageScale,
-      life: 1.6,
+      damage,
+      life: profile.life || 1.6,
+      areaDamage: isDrone ? 0 : damage * (profile.areaDamageScale || 0),
+      areaRange: isDrone ? 0 : profile.areaRange || 0,
       burnDamage: isDrone ? 0 : profile.burnDamage || 0,
       burnTime: isDrone ? 0 : profile.burnTime || 0,
       chainDamage: isDrone ? 0 : player.stats.damage * (profile.chainDamageScale || 0),
@@ -163,9 +160,8 @@
     };
   }
 
-  function createUpgradeChoices(playerLevel) {
-    const offset = playerLevel % UPGRADE_POOL.length;
-    return [0, 1, 2].map((step) => UPGRADE_POOL[(offset + step * 2) % UPGRADE_POOL.length]);
+  function createUpgradeChoices(playerLevel, player = null) {
+    return upgradeCodex.createChoices(playerLevel, player);
   }
 
   function applyUpgrade(player, upgrade) {

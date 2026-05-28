@@ -16,6 +16,7 @@
     drawBullets(context, state);
     drawEnemies(context, state);
     window.PickupVisual.drawCoreCombatEffects(context, state);
+    window.RelicVisual.drawRelicFields(context, state);
     drawEnemyBullets(context, state);
     drawPlayer(context, state);
     drawImpactFlashes(context, state);
@@ -128,7 +129,7 @@
     for (const bullet of state.bullets) {
       const trailX = bullet.vx * -0.045;
       const trailY = bullet.vy * -0.045;
-      const isPlasma = bullet.style === "plasma" || bullet.style === "twinPlasma";
+      const isPlasma = bullet.style === "plasma" || bullet.style === "twinPlasma" || bullet.style === "novaLance";
       context.globalAlpha = 0.32;
       context.fillStyle = bullet.trailColor || "#f0b84a";
       context.beginPath();
@@ -143,14 +144,16 @@
         context.beginPath();
         context.arc(bullet.x, bullet.y, bullet.width / 2, 0, Math.PI * 2);
         context.fill();
-        if (bullet.style === "twinPlasma") {
+        if (bullet.style === "twinPlasma" || bullet.style === "novaLance") {
           context.fillStyle = "#ffe0a3";
           context.beginPath();
           context.arc(bullet.x, bullet.y, bullet.width / 4, 0, Math.PI * 2);
           context.fill();
         }
       } else if (bullet.style === "piercingLaser") {
-        drawPiercingLaser(context, bullet);
+        window.ProjectileVisual.drawPiercingLaser(context, bullet);
+      } else if (bullet.style === "phaseShot") {
+        window.ProjectileVisual.drawPhaseShot(context, bullet);
       } else if (bullet.style === "droneLaser") {
         context.beginPath();
         context.arc(bullet.x, bullet.y, bullet.width / 2, 0, Math.PI * 2);
@@ -161,18 +164,6 @@
         context.fillRect(bullet.x - bullet.width / 2, bullet.y - bullet.height / 2, bullet.width, bullet.height);
       }
     }
-  }
-
-  function drawPiercingLaser(context, bullet) {
-    const angle = Math.atan2(bullet.vy, bullet.vx);
-    context.save();
-    context.translate(bullet.x, bullet.y);
-    context.rotate(angle);
-    context.fillStyle = bullet.color || "#5ee6cf";
-    context.fillRect(-bullet.width, -2, bullet.width * 3.4, 4);
-    context.fillStyle = "#f2dfb6";
-    context.fillRect(-bullet.width * 0.5, -1, bullet.width * 2.2, 2);
-    context.restore();
   }
 
   function drawEnemyBullets(context, state) {
