@@ -1,0 +1,6 @@
+# Lessons
+
+## 2026-05-27 - Countdown Scope
+- When adding countdown or pacing delays, confirm whether they apply only to the initial start or also between waves/levels.
+- Do not add inter-wave waiting by default in fast arcade games; keep wave transitions immediate unless the user explicitly asks for pacing.
+- For visual theme requests such as "space environment", replace placeholder/test visuals rather than layering cosmetic details over them.

@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dalga Savunmasi</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="src/camera.js" defer></script>
+    <script src="src/effects.js" defer></script>
+    <script src="src/audio-system.js" defer></script>
+    <script src="src/combat-juice.js" defer></script>
+    <script src="src/game-feedback.js" defer></script>
+    <script src="src/hangar-system.js" defer></script>
+    <script src="src/loot-system.js" defer></script>
+    <script src="src/weapon-evolution.js" defer></script>
+    <script src="src/run-summary.js" defer></script>
+    <script src="src/sector-events.js" defer></script>
+    <script src="src/mission-system.js" defer></script>
+    <script src="src/spawn-director.js" defer></script>
+    <script src="src/landmark-system.js" defer></script>
+    <script src="src/survival.js" defer></script>
+    <script src="src/enemy-system.js" defer></script>
+    <script src="src/elite-system.js" defer></script>
+    <script src="src/boss-system.js" defer></script>
+    <script src="src/radar-system.js" defer></script>
+    <script src="src/ui.js" defer></script>
+    <script src="src/audio-ui.js" defer></script>
+    <script src="src/run-summary-ui.js" defer></script>
+    <script src="src/sector-ui.js" defer></script>
+    <script src="src/hangar-ui.js" defer></script>
+    <script src="src/enemy-visual.js" defer></script>
+    <script src="src/pickup-visual.js" defer></script>
+    <script src="src/ship-visual.js" defer></script>
+    <script src="src/radar-visual.js" defer></script>
+    <script src="src/juice-visual.js" defer></script>
+    <script src="src/landmark-visual.js" defer></script>
+    <script src="src/draw.js" defer></script>
+    <script src="src/game-motion.js" defer></script>
+    <script src="src/controls.js" defer></script>
+    <script src="src/game.js" defer></script>
+    <script src="src/test-hooks.js" defer></script>
+  </head>
+  <body>
+    <main class="shell" aria-label="Dalga Savunmasi arcade oyunu">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Survival Auto-Shooter</p>
+          <h1>Dalga Savunmasi</h1>
+        </div>
+        <div class="top-actions" aria-label="Oyun kontrolleri">
+          <div class="audio-controls" aria-label="Ses kontrolleri">
+            <button class="audio-button" id="audioButton" type="button">Ses Acik</button>
+            <input class="volume-slider" id="volumeSlider" type="range" min="0" max="1" step="0.05" aria-label="Ses seviyesi">
+          </div>
+          <button class="action-button" id="actionButton" type="button">Baslat</button>
+        </div>
+      </header>
+
+      <section class="hud" aria-label="Oyun durumu">
+        <span>Puan <strong id="scoreValue">0</strong></span>
+        <span>Can <strong id="livesValue">3</strong></span>
+        <span>Dalga <strong id="waveValue">1</strong></span>
+        <span>XP <strong id="xpValue">0/5</strong></span>
+        <span>En iyi <strong id="bestValue">0</strong></span>
+      </section>
+
+      <section class="hangar-panel" aria-label="Hangar kalici gelistirmeleri">
+        <span>Core <strong id="hangarCoreValue">0</strong></span>
+        <button id="hangar-shield" type="button"></button>
+        <button id="hangar-reactor" type="button"></button>
+        <button id="hangar-magnet" type="button"></button>
+        <button id="hangar-scavenger" type="button"></button>
+      </section>
+
+      <section class="sector-panel" aria-label="Sektor olayi ve gorev durumu">
+        <span>Olay <strong id="sectorEventValue">Sakin</strong></span>
+        <span>Tehdit <strong id="threatValue">Dusuk</strong></span>
+        <span>Bolge <strong id="landmarkValue">Acik uzay</strong></span>
+        <span>Gorev <strong id="missionTitle">Gorev bekleniyor</strong> <em id="missionProgress">-</em></span>
+      </section>
+
+      <section class="game-frame" aria-label="Oyun alani">
+        <canvas id="gameCanvas" width="960" height="540"></canvas>
+        <div class="overlay" id="overlay">
+          <p id="phaseLabel">Hazir</p>
+          <h2 id="phaseTitle">Uzay hattini koru</h2>
+        </div>
+        <div class="upgrade-panel" id="upgradePanel" hidden>
+          <button class="upgrade-card" id="upgradeChoice0" type="button"></button>
+          <button class="upgrade-card" id="upgradeChoice1" type="button"></button>
+          <button class="upgrade-card" id="upgradeChoice2" type="button"></button>
+        </div>
+        <aside class="run-summary-panel" id="runSummaryPanel" aria-label="Run ozeti" hidden>
+          <p>Run Raporu</p>
+          <div class="summary-score">
+            <strong id="summaryScore">Puan 0</strong>
+            <span id="summaryBest">En iyi 0</span>
+          </div>
+          <ul>
+            <li id="summaryLine0"></li>
+            <li id="summaryLine1"></li>
+            <li id="summaryLine2"></li>
+            <li id="summaryLine3"></li>
+            <li id="summaryLine4"></li>
+          </ul>
+        </aside>
+      </section>
+
+      <nav class="touch-controls" aria-label="Dokunmatik kontroller">
+        <button type="button" id="upTouch" title="Yukari git" aria-label="Yukari git">&uarr;</button>
+        <button type="button" id="leftTouch" title="Sola git" aria-label="Sola git">&larr;</button>
+        <button type="button" id="downTouch" title="Asagi git" aria-label="Asagi git">&darr;</button>
+        <button type="button" id="rightTouch" title="Saga git" aria-label="Saga git">&rarr;</button>
+      </nav>
+    </main>
+  </body>
+</html>
