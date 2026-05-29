@@ -5,6 +5,15 @@
         juice.addBossVolleyWarning(state, event.boss, event.phase);
         audio.play("bossVolley");
       },
+      bossTelegraph: (state, event) => {
+        juice.addPing(state, "bossVolley", event.telegraph.x, event.telegraph.y, {
+          color: event.telegraph.color,
+          life: event.telegraph.maxLife,
+          lineWidth: event.telegraph.lineWidth,
+          maxRadius: event.telegraph.radius + 22,
+          radius: Math.max(30, event.telegraph.radius * 0.46),
+        });
+      },
       eliteSpawn: (state, enemy) => {
         juice.addEliteSpawnPing(state, enemy);
         audio.play("elite");

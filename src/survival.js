@@ -6,6 +6,12 @@
     sniper: { width: 42, height: 34, hp: 3, speed: 74, xp: 2, score: 130, pulseRate: 4.8, fireRate: 1.55, preferredRange: 285 },
     tank: { width: 58, height: 48, hp: 7, speed: 58, xp: 3, score: 190, pulseRate: 3.8 },
   };
+  const BOSS_ARCHETYPES = {
+    bulwark: { rewardTag: "Zirh Enkazi", speedScale: 0.92, hpScale: 1.16 },
+    core: { rewardTag: "Core Anomalisi", speedScale: 1, hpScale: 1 },
+    phase: { rewardTag: "Faz Kalintisi", speedScale: 1.16, hpScale: 0.92 },
+  };
+  const BOSS_ARCHETYPE_SEQUENCE = ["bulwark", "phase", "core"];
   const ROLE_SEQUENCE = ["scout", "tank", "sniper", "bomber"];
   const upgradeCodex = window.UpgradeCodex;
   const weaponEvolution = window.WeaponEvolution;
@@ -41,7 +47,9 @@
     const position = center && viewport ? getThreatPosition(world, center, viewport) : getEdgePosition(world);
     const isBoss = type === "boss";
     const role = isBoss ? null : ENEMY_ROLES[normalizeEnemyType(type)];
-    const hp = isBoss ? 22 + wave * 6 : role.hp + Math.floor(wave / 2);
+    const bossArchetype = isBoss ? getBossArchetype(wave) : null;
+    const bossProfile = bossArchetype ? BOSS_ARCHETYPES[bossArchetype] : null;
+    const hp = isBoss ? Math.round((22 + wave * 6) * bossProfile.hpScale) : role.hp + Math.floor(wave / 2);
     return {
       id: nextEnemyId++,
       ...position,
@@ -49,8 +57,10 @@
       height: isBoss ? 66 : role.height,
       hp,
       maxHp: hp,
-      speed: isBoss ? 54 + wave * 2 : role.speed + wave * 4,
+      speed: isBoss ? Math.round((54 + wave * 2) * bossProfile.speedScale) : role.speed + wave * 4,
       type: isBoss ? "boss" : normalizeEnemyType(type),
+      bossArchetype,
+      rewardTag: bossProfile?.rewardTag || "",
       xp: isBoss ? 10 + wave * 2 : role.xp,
       score: isBoss ? 1200 + wave * 160 : role.score + wave * 12,
       pulse: Math.random() * Math.PI,
@@ -71,6 +81,11 @@
   function getWaveEnemyType(wave, spawnIndex) {
     if (wave < 2) return spawnIndex % 3 === 0 ? "tank" : "scout";
     return ROLE_SEQUENCE[(spawnIndex + wave) % ROLE_SEQUENCE.length];
+  }
+
+  function getBossArchetype(wave) {
+    const bossIndex = Math.max(0, Math.floor(wave / 3) - 1);
+    return BOSS_ARCHETYPE_SEQUENCE[bossIndex % BOSS_ARCHETYPE_SEQUENCE.length];
   }
 
   function getEdgePosition(world) {
@@ -244,6 +259,7 @@
     getMovementInput,
     getNearestEnemy,
     getProjectileProfile,
+    getBossArchetype,
     getWaveEnemyType,
     getUnitVector,
     overlaps,

@@ -44,10 +44,13 @@
       world,
       bullets: [],
       enemyBullets: [],
+      bossTelegraphs: [],
       enemies: [],
       lootDrops: [],
       chainArcs: [],
       relicFields: [],
+      relicReveal: null,
+      relicRevealBursts: [],
       xpGems: [],
       sector: window.SectorEvents.createSectorState(),
       mission: window.MissionSystem.createMissionState(),
@@ -55,6 +58,7 @@
       landmarkState: window.LandmarkSystem.createLandmarkState(world),
       particles: [],
       combatPings: [],
+      bossPhaseFlashes: [],
       muzzleFlashes: [],
       impactFlashes: [],
       stars: effects.createStars(140, world),
@@ -65,6 +69,8 @@
       runStats: window.RunSummary.createRunStats(),
       upgradeChoices: [],
       relicChoices: [],
+      lastBossReward: null,
+      lastFormation: null,
       lastFrameTime: 0,
     };
   }
@@ -90,6 +96,7 @@
     window.CombatJuice.updatePings(state, delta);
     window.RunSummary.updateRunStats(state.runStats, state, delta);
     if (state.phase === "countdown") updateCountdown(delta);
+    if (state.phase === "relicReveal") updateRelicReveal(delta);
     updateCamera();
     if (state.phase !== "playing") return;
     updateThreat(delta);
@@ -106,7 +113,12 @@
     window.GameMotion.updateBullets(state, delta, world);
     enemySystem.updateEnemyBullets(state, delta, world);
     enemySystem.updateEnemies(state, delta, damagePlayer);
-    window.BossSystem.updateBosses(state, delta, (event) => feedback.bossVolley(state, event));
+    window.BossSystem.updateBosses(
+      state,
+      delta,
+      (event) => feedback.bossVolley(state, event),
+      (event) => feedback.bossTelegraph(state, event),
+    );
     window.SectorEvents.updateSectorEvents(state, delta);
     updateLandmarks(delta);
     window.MissionSystem.updateMission(state.mission, state, delta, applyMissionReward);
@@ -192,9 +204,10 @@
     lootSystem.dropLoot(state, enemy);
     state.xpGems.push(rules.createXpGem(enemy.x, enemy.y, enemy.xp));
     if (enemy.type === "boss") {
+      state.lastBossReward = { archetype: enemy.bossArchetype, tag: enemy.rewardTag };
       effects.emitParticles(state, enemy.x, enemy.y, "#f0b84a", 34, { life: 0.68, size: 4 });
       window.CombatJuice.addPing(state, "loot", enemy.x, enemy.y);
-      openRelicChoice();
+      openRelicReveal(enemy);
     }
   }
 
@@ -265,6 +278,18 @@
     syncInterface();
   }
 
+  function openRelicReveal(enemy) {
+    window.RelicReveal.start(state, enemy);
+    syncInterface();
+  }
+
+  function updateRelicReveal(delta) {
+    lootSystem.updateLootDrops(state, delta);
+    lootSystem.collectLootDrops(state, grantXp, grantHangarCore, handleLootCollect);
+    window.RelicReveal.update(state, delta, openRelicChoice);
+    syncInterface();
+  }
+
   function chooseRelic(index) {
     const relic = state.relicChoices[index];
     if (!relic || state.phase !== "relicChoice") return;
@@ -292,12 +317,42 @@
 
   function spawnHorde(count, difficulty = state.spawnDirector.lastDifficulty) {
     const cap = difficulty.enemyCap;
+    const openSlots = cap - state.enemies.length;
+    if (window.EnemyFormation.shouldSpawnFormation(state.wave, state.enemySpawnIndex, openSlots)) {
+      spawnFormation(Math.min(openSlots, 6));
+      count = Math.max(0, count - 1);
+    }
     for (let index = 0; index < count && state.enemies.length < cap; index += 1) {
       const type = window.SpawnDirector.getEnemyType(state.wave, state.enemySpawnIndex);
       const enemy = window.EliteSystem.applyEliteAffix(rules.createEnemy(world, state.wave, type, state.player, viewport), state.wave, state.enemySpawnIndex);
       state.enemies.push(enemy);
       if (enemy.elite) feedback.eliteSpawn(state, enemy);
       state.enemySpawnIndex += 1;
+    }
+  }
+
+  function spawnFormation(capacity) {
+    const formation = window.EnemyFormation.createFormation({
+      capacity,
+      player: state.player,
+      rules,
+      spawnIndex: state.enemySpawnIndex,
+      viewport,
+      wave: state.wave,
+      world,
+    });
+    for (const enemy of formation) {
+      const spawned = window.EliteSystem.applyEliteAffix(enemy, state.wave, state.enemySpawnIndex);
+      state.enemies.push(spawned);
+      if (spawned.elite) feedback.eliteSpawn(state, spawned);
+      state.enemySpawnIndex += 1;
+    }
+    if (formation.length > 0) {
+      state.lastFormation = {
+        count: formation.length,
+        id: formation[0].formationId,
+        type: formation[0].formationType,
+      };
     }
   }
 

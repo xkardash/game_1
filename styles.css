@@ -325,6 +325,13 @@ canvas {
     rgba(35, 53, 46, 0.94);
 }
 
+.recommended-relic {
+  border-color: #f0b84a;
+  box-shadow:
+    inset 0 -4px 0 rgba(23, 19, 15, 0.28),
+    0 0 0 1px rgba(240, 184, 74, 0.18);
+}
+
 .upgrade-meta {
   display: flex;
   justify-content: space-between;

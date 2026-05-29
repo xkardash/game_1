@@ -2,6 +2,7 @@
   const rules = window.SurvivalRules;
 
   function updateEnemies(state, delta, damagePlayer) {
+    applyCaptainAuras(state);
     for (const enemy of state.enemies) {
       if (enemy.type === "sniper") updateSniper(enemy, state, delta);
       else updateChaser(enemy, state.player, delta);
@@ -13,8 +14,9 @@
 
   function updateChaser(enemy, player, delta) {
     const direction = rules.getUnitVector(enemy, player);
-    enemy.x += direction.x * enemy.speed * delta;
-    enemy.y += direction.y * enemy.speed * delta;
+    const speed = getEffectiveSpeed(enemy);
+    enemy.x += direction.x * speed * delta;
+    enemy.y += direction.y * speed * delta;
   }
 
   function updateSniper(enemy, state, delta) {
@@ -22,17 +24,40 @@
     const distance = rules.getDistance(enemy, player);
     const direction = rules.getUnitVector(enemy, player);
     const range = enemy.preferredRange;
+    const speed = getEffectiveSpeed(enemy);
     if (distance > range + 36) {
-      enemy.x += direction.x * enemy.speed * delta;
-      enemy.y += direction.y * enemy.speed * delta;
+      enemy.x += direction.x * speed * delta;
+      enemy.y += direction.y * speed * delta;
     } else if (distance < range - 52) {
-      enemy.x -= direction.x * enemy.speed * delta;
-      enemy.y -= direction.y * enemy.speed * delta;
+      enemy.x -= direction.x * speed * delta;
+      enemy.y -= direction.y * speed * delta;
     } else {
-      enemy.x += -direction.y * enemy.speed * enemy.orbit * delta * 0.42;
-      enemy.y += direction.x * enemy.speed * enemy.orbit * delta * 0.42;
+      enemy.x += -direction.y * speed * enemy.orbit * delta * 0.42;
+      enemy.y += direction.x * speed * enemy.orbit * delta * 0.42;
     }
     if (enemy.fireCooldown <= 0 && distance < range + 80) fireSniperShot(enemy, state);
+  }
+
+  function applyCaptainAuras(state) {
+    for (const enemy of state.enemies || []) {
+      enemy.captainBuff = "";
+      enemy.speedMultiplier = 1;
+    }
+    const captains = (state.enemies || []).filter((enemy) => enemy.captain && enemy.hp > 0);
+    for (const captain of captains) {
+      const aura = captain.captainAura || {};
+      const range = aura.range || 0;
+      for (const ally of state.enemies || []) {
+        if (ally === captain || ally.type === "boss") continue;
+        if (rules.getDistance(captain, ally) > range) continue;
+        ally.captainBuff = "speed";
+        ally.speedMultiplier = Math.max(ally.speedMultiplier || 1, aura.speedScale || 1);
+      }
+    }
+  }
+
+  function getEffectiveSpeed(enemy) {
+    return enemy.speed * (enemy.speedMultiplier || 1);
   }
 
   function fireSniperShot(enemy, state) {
@@ -80,6 +105,7 @@
   }
 
   window.EnemySystem = {
+    applyCaptainAuras,
     checkEnemyBulletHits,
     explodeBomber,
     updateEnemies,

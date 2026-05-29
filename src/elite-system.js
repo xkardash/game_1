@@ -11,6 +11,7 @@
   }
 
   function applyEliteAffix(enemy, wave, spawnIndex) {
+    if (enemy.captain) return enemy;
     const affix = getEliteAffix(wave, spawnIndex);
     if (!affix) return enemy;
     enemy.elite = true;

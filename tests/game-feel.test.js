@@ -277,7 +277,10 @@ test("defeating a boss opens a three-choice boss relic reward", async () => {
       game.state.enemies = [boss];
       game.state.bullets = [{ x: boss.x, y: boss.y, width: 14, height: 14, damage: 99, vx: 0, vy: 0, life: 1 }];
     })()`);
-    await wait(160);
+    await waitUntil(
+      page,
+      "window.DalgaSavunmasiTest.snapshot().phase === 'relicChoice' && !!document.querySelector('#upgradeChoice0')"
+    );
 
     const relicPhase = await page.evaluate(`(() => {
       const first = document.querySelector("#upgradeChoice0");

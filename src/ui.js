@@ -56,9 +56,9 @@
         });
       }
       if (hangarReturnButton) {
-        hangarReturnButton.hidden = !["countdown", "playing", "paused", "levelUp", "relicChoice"].includes(state.phase);
+        hangarReturnButton.hidden = !["countdown", "playing", "paused", "levelUp", "relicReveal", "relicChoice"].includes(state.phase);
       }
-      actionButton.textContent = ["countdown", "playing", "paused", "levelUp", "relicChoice"].includes(state.phase) ? "Sifirla" : "Baslat";
+      actionButton.textContent = ["countdown", "playing", "paused", "levelUp", "relicReveal", "relicChoice"].includes(state.phase) ? "Sifirla" : "Baslat";
       phaseLabel.textContent = copy.label;
       phaseTitle.textContent = copy.title;
       syncUpgradePanel(state);
@@ -70,7 +70,7 @@
       upgradePanel.hidden = !isChoicePhase;
       if (!isChoicePhase) return;
       for (const [index, button] of upgradeButtons.entries()) {
-        if (state.phase === "relicChoice") renderRelicCard(button, state.relicChoices[index], index);
+        if (state.phase === "relicChoice") renderRelicCard(button, state.relicChoices[index], index, state.player);
         else renderUpgradeCard(button, state.upgradeChoices[index], index, state.player);
       }
     }
@@ -98,7 +98,7 @@
       if (view.synergy) button.append(createTextElement("upgrade-synergy", view.synergy));
     }
 
-    function renderRelicCard(button, relic, index) {
+    function renderRelicCard(button, relic, index, player) {
       button.replaceChildren();
       if (!relic) {
         button.className = "upgrade-card relic-card";
@@ -107,17 +107,18 @@
         return;
       }
 
-      const view = window.RelicSystem.getRelicView(relic);
+      const view = window.RelicSystem.getRelicView(relic, player);
       button.disabled = false;
-      button.className = "upgrade-card relic-card";
+      button.className = view.recommended ? "upgrade-card relic-card recommended-relic" : "upgrade-card relic-card";
       button.dataset.rarity = view.rarity;
-      button.setAttribute("aria-label", `${index + 1}. ${view.title}. ${view.effect}. ${view.body}`);
+      button.setAttribute("aria-label", `${index + 1}. ${view.title}. ${view.effect}. ${view.synergy || view.body}`);
       button.append(
         createRelicMetaRow(view),
         createTextElement("relic-title", `${index + 1}. ${view.title}`),
         createTextElement("relic-body", view.body),
         createTextElement("relic-effect", view.effect),
       );
+      if (view.synergy) button.append(createTextElement("upgrade-synergy", view.synergy));
     }
 
     function createRelicMetaRow(view) {
@@ -140,7 +141,7 @@
         lastDashboardStatsSignature = signature;
       }
 
-      const showRuntimeStats = ["countdown", "playing", "paused", "levelUp", "relicChoice"].includes(state.phase);
+      const showRuntimeStats = ["countdown", "playing", "paused", "levelUp", "relicReveal", "relicChoice"].includes(state.phase);
       syncRuntimeStatsPanel(rows, showRuntimeStats, signature);
     }
 
@@ -199,6 +200,7 @@
     if (state.phase === "countdown") return { label: "Hazirlan", title: String(Math.max(1, Math.ceil(state.countdown / 0.6))) };
     if (state.phase === "paused") return { label: "Mola", title: "Duraklatildi" };
     if (state.phase === "levelUp") return { label: "Seviye Atladi", title: "Bir guc sec" };
+    if (state.phase === "relicReveal") return { label: "Boss Relic", title: "Enkaz sinyali cozuluyor" };
     if (state.phase === "relicChoice") return { label: "Boss Relic", title: "Bir enkaz odulu sec" };
     if (state.phase === "gameOver") return { label: "Bitti", title: `Puan ${state.score}` };
     return { label: "Hazir", title: "Uzay hattini koru" };

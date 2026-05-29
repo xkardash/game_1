@@ -12,6 +12,9 @@
     drawXpGems(context, state);
     window.PickupVisual.drawLootDrops(context, state);
     window.JuiceVisual.drawCombatPings(context, state);
+    window.JuiceVisual.drawBossTelegraphs(context, state);
+    window.BossUi.drawBossPhaseFlashes(context, state);
+    window.RelicReveal.drawWorld(context, state);
     drawMuzzleFlashes(context, state);
     drawBullets(context, state);
     drawEnemies(context, state);
@@ -22,6 +25,8 @@
     drawImpactFlashes(context, state);
     drawParticles(context, state);
     context.restore();
+    window.BossUi.drawBossHud(context, state, viewport);
+    window.RelicReveal.drawScreen(context, state, viewport);
     window.RadarVisual.drawRadar(context, state, world, viewport);
     context.restore();
   }
@@ -168,7 +173,7 @@
 
   function drawEnemyBullets(context, state) {
     for (const bullet of state.enemyBullets) {
-      if (bullet.style === "bossMine") {
+      if (bullet.style === "bossMine" || bullet.style === "coreMine") {
         drawBossMine(context, bullet);
         continue;
       }

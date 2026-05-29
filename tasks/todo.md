@@ -666,3 +666,175 @@ Results:
 - Verification: `rg "innerHTML|eval\(|new Function|TODO|FIXME|Not implemented|ship-yava" index.html src tests styles.css` returned no matches.
 - Verification: 45 pure Node tests passed.
 - Verification gap: targeted browser verification could not be rerun after implementation because the headless Chromium escalation was rejected by the app usage limit. The browser regression file remains in `tests/relic-builds.test.js` for the next available run.
+
+### Smart Boss Relic Rewards Plan
+- [x] Add pure Node tests proving boss relic choices prioritize the player's current upgrade build.
+- [x] Add pure Node tests proving owned relics are avoided when enough fresh relics remain.
+- [x] Add a UI rendering test proving recommended relic cards show a safe synergy hint.
+- [x] Watch the new tests fail before production changes.
+- [x] Update `RelicSystem` to score choices by build fit without making rewards deterministic in a stale way.
+- [x] Update relic card rendering to show recommendation/synergy text using safe DOM APIs.
+- [x] Run syntax, security, pure Node, and file-size verification.
+- [x] Record results here.
+
+Results:
+- Boss relic choices now score rewards by current build: `damage` prefers `Nova Cekirdegi`, `magnet` prefers `Bosluk Sifonu`, and `rapid` prefers `Faz Enjektoru`.
+- Owned relics are skipped while at least three fresh boss rewards remain, so later boss rewards push the player toward new build routes.
+- Recommended relic cards now show a compact synergy hint such as `Build: Phase Burst acilir` using safe DOM text rendering.
+- Defensive fallback remains: low/no shield states still keep `Yildiz Zirhi` attractive.
+- RED evidence: `tests/relic-system.test.js tests/relic-ui.test.js` first failed 4/5 because choices were still the first three relics, owned relics were not skipped, synergy hints were absent, and the relic card did not render a hint.
+- Verification: `node --check` passed for all `src` and `tests` JavaScript files.
+- Verification: `rg "innerHTML|eval\(|new Function|TODO|FIXME|Not implemented|ship-yava" index.html src tests styles.css` returned no matches.
+- Verification: 49 pure Node tests passed.
+- File-size note: this package did not push newly touched files past the existing guardrails; `ui.js` is 209 lines and `relic-system.js` stays below 120 lines.
+
+### Boss Archetype Relic Pool Plan
+- [x] Add pure Node tests proving boss enemies receive deterministic archetypes.
+- [x] Add pure Node tests proving bulwark, phase, and core boss archetypes bias relic choices differently.
+- [x] Watch the new tests fail before production changes.
+- [x] Add lightweight boss archetype metadata to boss creation.
+- [x] Pass the defeated boss archetype into the relic reward context.
+- [x] Update `RelicSystem` scoring so boss identity and player build both influence choices.
+- [x] Expose the defeated boss reward context through test hooks.
+- [x] Run syntax, security, pure Node, and file-size verification.
+- [x] Record results here.
+
+Results:
+- Bosses now cycle deterministic reward archetypes by boss wave: wave 3 `bulwark`, wave 6 `phase`, wave 9 `core`, then repeat.
+- Boss creation now adds `bossArchetype` and a compact reward tag, with small speed/HP identity differences.
+- Boss death stores the defeated boss reward context before opening the relic choice.
+- Relic scoring now combines player build fit with boss identity: bulwark favors `Yildiz Zirhi`, phase favors `Faz Enjektoru`, and core favors `Nova Cekirdegi` / `Bosluk Sifonu`.
+- Test hooks now expose `bossArchetypes` and `lastBossReward` for future browser regressions.
+- RED evidence: `tests/boss-relic-pool.test.js` first failed 3/3 because boss archetypes were missing and relic scoring ignored boss reward context.
+- Verification: `node --check` passed for all `src` and `tests` JavaScript files.
+- Verification: `rg "innerHTML|eval\(|new Function|TODO|FIXME|Not implemented|ship-yava" index.html src tests styles.css` returned no matches.
+- Verification: 52 pure Node tests passed.
+- File-size note: `relic-system.js` is 139 lines, `survival.js` is 267 lines, and `game.js` remains above the existing guardrail at 382 lines from earlier work.
+
+### Boss Archetype Visual Identity Plan
+- [x] Add pure Node visual-profile tests proving bulwark, phase, and core bosses have distinct silhouettes/colors.
+- [x] Add fake-canvas renderer tests proving boss archetypes produce different draw traces without browser access.
+- [x] Watch the new tests fail before production changes.
+- [x] Refactor boss command-ship drawing around small visual profiles.
+- [x] Add distinct visual marks: bulwark armor plates, phase fins, and core reactor.
+- [x] Run syntax, security, pure Node, and file-size verification.
+- [x] Record results here.
+
+Results:
+- Boss rendering now uses archetype visual profiles with distinct hull scale, plate colors, accent colors, reactor scale, and thruster tone.
+- `bulwark` bosses draw wider silhouettes with gold armor plates.
+- `phase` bosses draw narrower silhouettes with cyan fins and a tall phase spine.
+- `core` bosses draw a larger orange reactor and crown-like core hardware.
+- Added `EnemyVisual.getBossVisualProfile()` for testable visual metadata without needing browser pixels.
+- RED evidence: `tests/boss-visual.test.js` first failed because `getBossVisualProfile` was missing and all boss archetypes produced identical draw traces.
+- Verification: `node --check` passed for all `src` and `tests` JavaScript files.
+- Verification: `rg "innerHTML|eval\(|new Function|TODO|FIXME|Not implemented|ship-yava" index.html src tests styles.css` returned no matches.
+- Verification: 54 pure Node tests passed.
+- File-size note: `enemy-visual.js` is now 240 lines and remains under the 300-line guardrail.
+
+### Boss Archetype Behavior Plan
+- [x] Add pure Node tests proving bulwark bosses fire heavy pressure shots.
+- [x] Add pure Node tests proving phase bosses dash/strafe and fire fast phase shards.
+- [x] Add pure Node tests proving core bosses deploy lingering core hazard mines.
+- [x] Watch the new tests fail before production changes.
+- [x] Add small archetype attack profiles to `BossSystem` without changing old default boss behavior.
+- [x] Expose the active boss attack pattern through existing volley events/test hooks.
+- [x] Run syntax, security, pure Node, and file-size verification.
+- [x] Record results here.
+
+Results:
+- `bulwark` bosses now open with `bulwarkBarrage`: six slower, heavier pressure shots.
+- `phase` bosses now open with `phaseStrafe`: a short lateral strafe plus seven fast phase shards.
+- `core` bosses now open with `coreMineRing`: twelve long-lived core hazard mines.
+- Archetipped bosses use their own pattern tables while old untyped boss behavior still uses the original phase pattern sequence.
+- The active boss attack pattern is now stored on state and exposed through test hooks as `lastBossAttackPattern`.
+- RED evidence: `tests/boss-archetype-behavior.test.js` first failed 3/3 because every archetype still used `radialVolley`; the pattern exposure assertion then failed until state tracking was added.
+- Verification: `node --check` passed for all `src` and `tests` JavaScript files.
+- Verification: `rg "innerHTML|eval\(|new Function|TODO|FIXME|Not implemented|ship-yava" index.html src tests styles.css` returned no matches.
+- Verification: 57 pure Node tests passed.
+- File-size note: `boss-system.js` is 202 lines and remains under the 300-line guardrail.
+
+### Boss Telegraph Warning Plan
+- [x] Add pure Node tests proving arketip boss special attacks create a warning before bullets spawn.
+- [x] Add fake-canvas visual tests proving telegraph warnings draw readable rings/lines without browser access.
+- [x] Watch the new tests fail before production changes.
+- [x] Add a short windup/pending-attack path to `BossSystem` while preserving old untyped boss behavior.
+- [x] Render telegraph warnings in the world layer before enemy bullets.
+- [x] Wire game feedback/test hooks so runtime state exposes active telegraphs.
+- [x] Run syntax, security, pure Node, and file-size verification.
+- [x] Record results here.
+
+Results:
+- Arketip boss ozel saldirilari artik direkt mermi uretmiyor; once 0.42 saniyelik `bossTelegraph` uyarisi olusuyor, sonra bekleyen saldiri atesleniyor.
+- `bulwarkBarrage`, `phaseStrafe`, and `coreMineRing` kendi uyari renkleri/ringleriyle ciziliyor; eski arketipsiz boss davranisi aninda ates etmeye devam ediyor.
+- Runtime state artik `bossTelegraphs` ve `lastBossTelegraphPattern` degerlerini test hook uzerinden gosteriyor.
+- RED evidence: `tests\boss-telegraph.test.js tests\boss-telegraph-visual.test.js` first failed because arketip bosses fired immediately and `JuiceVisual.drawBossTelegraphs` did not exist.
+- Verification: `node --test --test-concurrency=1` passed 61 pure Node tests including the new telegraph tests.
+- Verification: `node --check` passed for all `src` and `tests` JavaScript files.
+- Verification: `rg "innerHTML|eval\(|new Function|TODO|FIXME|Not implemented|throw new Error" index.html src tests styles.css` only matched expected `tests/browser-driver.js` thrown errors.
+- File-size note: `boss-system.js` is 266 lines, `draw.js` is 284 lines, and `juice-visual.js` is 78 lines.
+
+### Boss Readability HUD Plan
+- [x] Add pure Node tests for boss display metadata: name, role, phase label, HP ratio, and accent color.
+- [x] Add fake-canvas tests proving the boss HUD and phase transition ring render without browser access.
+- [x] Watch the new tests fail before production changes.
+- [x] Add phase-change tracking to `BossSystem` with short-lived `bossPhaseFlashes`.
+- [x] Add a small `BossUi` renderer for top-screen boss bar, phase chips, and phase flash rings.
+- [x] Wire the renderer into `index.html`, `draw.js`, `game.js`, and test hooks.
+- [x] Run syntax, security, pure Node, and file-size verification.
+- [x] Record results here.
+
+Results:
+- Added `src/boss-phase.js` for boss phase tracking and short-lived phase flash rings when HP crosses phase thresholds.
+- Added `src/boss-ui.js` for the top-screen boss HUD: readable boss title, role, phase label, phase chips, accent color, and HP bar.
+- Wired the boss HUD into `draw.js` and loaded the new modules from `index.html`; test hooks now expose boss phase flash counts and last phase change.
+- RED evidence: `tests\boss-ui.test.js tests\boss-phase-transition.test.js` first failed because `src/boss-ui.js` did not exist and BossSystem did not track `currentBossPhase`.
+- Verification: `node --test --test-concurrency=1` passed 64 pure Node tests including the new boss HUD/phase tests.
+- Verification: `node --check` passed for all `src` and `tests` JavaScript files.
+- Verification: `rg "innerHTML|eval\(|new Function|TODO|FIXME|Not implemented|throw new Error" index.html src tests styles.css` only matched expected `tests/browser-driver.js` thrown errors.
+- Verification: `git diff --check` reported no whitespace errors, only existing CRLF conversion warnings.
+- File-size note: `boss-phase.js` is 48 lines, `boss-ui.js` is 99 lines, `boss-system.js` is 268 lines, and `draw.js` is 286 lines.
+
+### Boss Relic Reveal Plan
+- [x] Add pure Node tests proving boss death enters a short `relicReveal` phase before relic choices open.
+- [x] Add fake-canvas tests proving the reveal burst and screen banner render without browser access.
+- [x] Watch the new tests fail before production changes.
+- [x] Add a small `RelicReveal` module for reveal timing, burst state, and canvas rendering.
+- [x] Wire boss death to reveal first, then open existing relic choices after the short reveal.
+- [x] Update UI copy/test hooks for the new transient phase.
+- [x] Run syntax, security, pure Node, and file-size verification.
+- [x] Record results here.
+
+Results:
+- Added `src/relic-reveal.js` with a short `relicReveal` phase, reveal timer, world-space burst ring, and screen-space relic signal banner.
+- Boss death now starts the reveal first, then opens the existing three-choice boss relic reward after the brief reveal.
+- UI copy now labels the transient phase as `Enkaz sinyali cozuluyor`, and test hooks expose `relicRevealActive` plus `relicRevealBursts`.
+- RED evidence: `tests\relic-reveal.test.js tests\relic-reveal-visual.test.js` first failed because `src/relic-reveal.js` did not exist.
+- Verification: `node --test --test-concurrency=1` passed 67 pure Node tests including the new reveal tests.
+- Verification: `node --check` passed for all `src` and `tests` JavaScript files.
+- Verification: `rg "innerHTML|eval\(|new Function|TODO|FIXME|Not implemented|throw new Error" index.html src tests styles.css` only matched expected `tests/browser-driver.js` thrown errors.
+- Verification: `git diff --check` reported no whitespace errors, only existing CRLF conversion warnings.
+- File-size note: `relic-reveal.js` is 121 lines, `game.js` is 402 lines, `draw.js` is 288 lines, and `ui.js` is 210 lines.
+
+### Enemy Formations + Captain Plan
+- [x] Add pure Node tests proving wave-based formation packs spawn coordinated tank/scout/sniper/bomber roles.
+- [x] Add pure Node tests proving captain enemies buff nearby allies without affecting distant enemies.
+- [x] Add fake-canvas tests proving captain enemies have a distinct readable command mark.
+- [x] Watch the new tests fail before production changes.
+- [x] Add a small `EnemyFormation` module for formation composition, deterministic placement, and captain metadata.
+- [x] Wire formation spawning into `game.js` while respecting enemy caps and existing elite/boss flow.
+- [x] Apply captain aura inside `EnemySystem` and expose formation/captain state through test hooks.
+- [x] Run syntax, security, pure Node, and file-size verification.
+- [x] Record results here.
+
+Results:
+- Added `src/enemy-formation.js` with deterministic pincer and command-wing formation packs that coordinate tanks, scouts, snipers, bombers, and captain ships.
+- Formation spawning is now wired into `game.js`; it respects the enemy cap and skips random elite affixes for captain enemies.
+- Captain enemies now project a speed aura to nearby non-boss allies through `EnemySystem`, while distant enemies stay unaffected.
+- Captain ships draw a distinct command ring/crown mark in `EnemyVisual`, and test hooks expose formation, captain, and buffed-enemy counts.
+- RED evidence: `tests\enemy-formation.test.js tests\enemy-captain-aura.test.js tests\enemy-captain-visual.test.js` first failed because `src/enemy-formation.js`, `EnemySystem.applyCaptainAuras`, and captain visual marks did not exist.
+- Verification: `node --test --test-concurrency=1` passed 72 pure Node tests including the new formation/captain tests.
+- Verification: `node --check` passed for all `src` and `tests` JavaScript files.
+- Verification: `rg "innerHTML|eval\(|new Function|TODO|FIXME|Not implemented|throw new Error" index.html src tests styles.css` only matched expected `tests/browser-driver.js` thrown errors.
+- Verification: `git diff --check` reported no whitespace errors, only existing CRLF conversion warnings.
+- File-size note: `enemy-formation.js` is 110 lines, `enemy-system.js` is 114 lines, `enemy-visual.js` is 256 lines, and `game.js` is 433 lines.
