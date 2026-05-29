@@ -838,3 +838,110 @@ Results:
 - Verification: `rg "innerHTML|eval\(|new Function|TODO|FIXME|Not implemented|throw new Error" index.html src tests styles.css` only matched expected `tests/browser-driver.js` thrown errors.
 - Verification: `git diff --check` reported no whitespace errors, only existing CRLF conversion warnings.
 - File-size note: `enemy-formation.js` is 110 lines, `enemy-system.js` is 114 lines, `enemy-visual.js` is 256 lines, and `game.js` is 433 lines.
+
+### Overdrive Ultimate Plan
+- [x] Add pure Node tests proving overdrive charge fills, clamps, and exposes ready state.
+- [x] Add pure Node tests proving build-specific overdrive modes activate: Surge, Nova, Phase, and Void.
+- [x] Add fake-canvas tests proving the overdrive bar and burst visuals render without browser access.
+- [x] Watch the new tests fail before production changes.
+- [x] Add a small `OverdriveSystem` module for charge, activation, mode selection, combat pulses, and rendering.
+- [x] Wire charge gain from kills/XP/overdrive loot and activation from `E`.
+- [x] Update game drawing, stats, and test hooks for charge/ready/mode visibility.
+- [x] Run syntax, security, pure Node, and file-size verification.
+- [x] Record results here.
+
+Results:
+- Added `src/overdrive-system.js` with charge gain, ready state, `E` activation, build-specific modes, world bursts, and a bottom-screen overdrive bar.
+- Overdrive charge now fills from kills, XP gems, overdrive loot, and core loot while preserving the old temporary fire-rate boost from overdrive pickups.
+- Build modes now resolve to `surge`, `nova`, `phase`, or `void`; Nova activation damages nearby enemies immediately, while Void pulses damage during active overdrive.
+- `controls.js`, `game.js`, `draw.js`, `stat-system.js`, `survival.js`, and `test-hooks.js` now expose and use overdrive charge, ready state, mode, and bursts.
+- RED evidence: `tests\overdrive-system.test.js tests\overdrive-visual.test.js` first failed because `src/overdrive-system.js` did not exist.
+- Verification: `node --test --test-concurrency=1` passed 77 pure Node tests including the new overdrive tests.
+- Verification: `node --check` passed for all `src` and `tests` JavaScript files.
+- Verification: `rg "innerHTML|eval\(|new Function|TODO|FIXME|Not implemented|throw new Error" index.html src tests styles.css` only matched expected `tests/browser-driver.js` thrown errors.
+- Verification: `git diff --check` reported no whitespace errors, only existing CRLF conversion warnings.
+- File-size note: `overdrive-system.js` is 180 lines, `game.js` is 450 lines, `draw.js` is 290 lines, and `stat-system.js` is 71 lines.
+
+### Tactical Map Objectives Plan
+Narrative: The expanded sector should ask the player to move with intent, not only kite enemies. Short-lived map objectives will appear away from the ship, pull the player toward a readable location, and pay focused rewards when completed.
+
+- [x] Add pure Node tests proving tactical objectives spawn at safe world positions away from the player.
+- [x] Add pure Node tests proving signal beacons, supply capsules, and anomaly zones progress from proximity/interactions and emit rewards.
+- [x] Add fake-canvas tests proving objective world markers and progress rings render readably without browser access.
+- [x] Add UI/radar tests proving active objectives are visible in the tactical panel and minimap.
+- [x] Watch the new tests fail before production changes.
+- [x] Add a small `TacticalObjectiveSystem` module for scheduling, progress, rewards, and rendering.
+- [x] Wire objective updates into `game.js`, `draw.js`, `radar-system.js`, and `sector-ui.js`.
+- [x] Expose objective state through test hooks.
+- [x] Run syntax, security, pure Node, and file-size verification.
+- [x] Record results here.
+
+Results:
+- Added `src/tactical-objective-system.js` with three rotating map objectives: `Sinyal istasyonu`, `Tedarik kapsulu`, and `Anomali bolgesi`.
+- Objectives spawn at safe positions away from the player, charge while the ship stays inside the objective radius, expire if ignored, and pay focused rewards on completion.
+- `Sinyal istasyonu` grants XP and overdrive charge, `Tedarik kapsulu` drops a core reward, and `Anomali bolgesi` creates extra pressure pulses before rewarding overdrive charge.
+- Active objectives now render as world markers with progress rings, appear as distinct radar blips, show in the sector panel, and expose state through test hooks.
+- RED evidence: `tests\tactical-objective-system.test.js tests\tactical-objective-visual.test.js tests\radar-system.test.js tests\sector-ui.test.js` first failed because the objective system, radar blip, and UI fields were missing.
+- Verification: targeted objective/UI/radar tests passed 11/11.
+- Verification: broader pure Node suite passed 84/84 tests.
+- Verification: `node --check` passed for all `src` and `tests` JavaScript files.
+- Verification: `rg "innerHTML|eval\(|new Function|TODO|FIXME|Not implemented|throw new Error" index.html src tests styles.css` only matched expected `tests/browser-driver.js` thrown errors.
+- Verification: `git diff --check` reported no whitespace errors, only CRLF conversion warnings.
+- Browser verification note: tests that require `tests/browser-driver.js` were not run in this pass because they launch Chromium and prior app usage limits blocked that path.
+- File-size note: `tactical-objective-system.js` is 208 lines, `game.js` is 439 lines, and `draw.js` is 274 lines.
+
+### Combat UX Clarity Plan
+Narrative: The player is a pilot under pressure, not a spreadsheet reader. When a powerful action or map objective is available, the interface should surface the next useful action in the playfield without covering the fight.
+
+- [x] Add pure Node tests proving ready overdrive creates a visible keyboard prompt with the active mode.
+- [x] Add pure Node tests proving off-screen tactical objectives produce an edge pointer and on-screen objectives do not.
+- [x] Add pure Node tests proving objective rewards create short readable reward notices.
+- [x] Add controls tests proving the touch overdrive button activates overdrive only while playing.
+- [x] Add fake-canvas tests proving prompt, pointer, and reward notices render readably.
+- [x] Watch the new tests fail before production changes.
+- [x] Add a small `CombatUx` module for prompt state, objective pointer math, reward notices, and canvas rendering.
+- [x] Wire `CombatUx` into `game.js`, `draw.js`, `controls.js`, `index.html`, and styles.
+- [x] Expose UX state through test hooks.
+- [x] Run syntax, security, pure Node, and file-size verification.
+- [x] Record results here.
+
+Results:
+- Added `src/combat-ux.js` for ready-overdrive prompt state, off-screen objective pointer math, objective reward notices, touch overdrive button sync, and canvas rendering.
+- Ready overdrive now shows a readable in-canvas `E` prompt with the active mode, so `NOVA READY` makes the input obvious.
+- Off-screen tactical objectives now draw an edge pointer with the objective title, while objectives already inside the viewport avoid extra clutter.
+- Objective rewards now create short notices such as `+4 XP / Overdrive +18`.
+- Mobile/touch players now get an `OD` overdrive button that appears during play and activates only while the game is in `playing` phase.
+- RED evidence: `tests\combat-ux.test.js tests\combat-ux-visual.test.js tests\controls.test.js` first failed because `src/combat-ux.js` did not exist and `#overdriveTouch` had no pointer handler.
+- Verification: targeted Combat UX tests passed 6/6.
+- Verification: broader pure Node suite passed 90/90 tests.
+- Verification: `node --check` passed for all `src` and `tests` JavaScript files.
+- Verification: `rg "innerHTML|eval\(|new Function|TODO|FIXME|Not implemented|throw new Error" index.html src tests styles.css` only matched expected `tests/browser-driver.js` thrown errors.
+- Verification: `git diff --check` reported no whitespace errors, only CRLF conversion warnings.
+- Browser verification note: browser-driver tests were not run in this pass because they launch Chromium and prior app usage limits blocked that path.
+- File-size note: `combat-ux.js` is 178 lines, `game.js` is 450 lines, and `draw.js` is 275 lines.
+
+### Upgrade Build Clarity Plan
+Narrative: Level-up is the pilot's engineering table. Each card should say not only "what stat changes", but also which weapon/build route it advances so choices feel deliberate instead of guesswork.
+
+- [x] Add pure Node tests proving upgrade views expose build route hints for Nova Lance, Phase Burst, Void Field, Twin Plasma, Piercing Laser, and Drone Support.
+- [x] Add UI rendering tests proving upgrade cards show route chips safely and include them in accessible labels.
+- [x] Watch the new tests fail before production changes.
+- [x] Extend `UpgradeCodex` with small build-route metadata derived from current upgrades and relics.
+- [x] Render build route rows on upgrade cards without using unsafe DOM APIs.
+- [x] Add restrained card styling for route chips that fits the existing HUD.
+- [x] Run syntax, security, pure Node, and file-size verification.
+- [x] Record results here.
+
+Results:
+- `UpgradeCodex` now exposes `buildRoutes` for level-up choices, covering Nova Lance, Phase Burst, Void Field, Drone Support, Piercing Laser, and Twin Plasma routes.
+- Upgrade cards now show a compact `Build: ...` chip plus a short route hint, for example `Nova Cekirdegi aktif: Nova Lance acilir.`
+- Accessible labels now include the build route text, and rendering still uses safe DOM APIs with `textContent`/created elements.
+- Card styling adds restrained build chips using the existing teal/gold/phase palette without expanding the HUD into a bulky guide panel.
+- RED evidence: `tests\upgrade-codex.test.js tests\upgrade-ui.test.js` first failed because `buildRoutes`, `data-build`, and `upgrade-build` rows did not exist.
+- Verification: targeted upgrade clarity tests passed 3/3.
+- Verification: broader pure Node suite passed 92/92 tests.
+- Verification: `node --check` passed for all `src` and `tests` JavaScript files.
+- Verification: `rg "innerHTML|eval\(|new Function|TODO|FIXME|Not implemented|throw new Error" index.html src tests styles.css` only matched expected `tests/browser-driver.js` thrown errors.
+- Verification: `git diff --check` reported no whitespace errors, only CRLF conversion warnings.
+- Browser verification note: browser-driver tests were not run in this pass because they launch Chromium and prior app usage limits blocked that path.
+- File-size note: `upgrade-codex.js` is 208 lines, `ui.js` is 205 lines, and the new `upgrade-ui.test.js` is 100 lines.

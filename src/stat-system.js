@@ -25,6 +25,7 @@
       { key: "magnet", label: "Cekim", value: `${Math.round(player.stats.magnet)} px`, detail: "XP toplama" },
       { key: "shield", label: "Kalkan", value: String(player.shields || 0), detail: `Can ${Math.max(0, player.lives)}` },
       { key: "weapon", label: "Silah", value: getWeaponName(evolution.id), detail: `${getMountedWeaponCount(player)} mod takili` },
+      { key: "overdrive", label: "Overdrive", value: formatPercent(getOverdriveRatio(player)), detail: getOverdriveDetail(player) },
       { key: "synergy", label: "Sinerji", value: synergies.join(" + ") || "Yok", detail: state.level ? `Seviye ${state.level}` : "" },
       { key: "relics", label: "Relicler", value: getRelicNames(player).join(" + ") || "Yok", detail: getRelicDetail(player) },
     ];
@@ -49,6 +50,21 @@
 
   function formatDecimal(value) {
     return Number(value).toFixed(1);
+  }
+
+  function formatPercent(value) {
+    return `${Math.round(value * 100)}%`;
+  }
+
+  function getOverdriveRatio(player) {
+    if (!window.OverdriveSystem) return 0;
+    return window.OverdriveSystem.getChargeRatio(player);
+  }
+
+  function getOverdriveDetail(player) {
+    const mode = window.OverdriveSystem?.getMode?.(player);
+    if ((player.overdrive || 0) > 0) return `${mode?.label || "Surge"} aktif`;
+    return window.OverdriveSystem?.isReady?.(player) ? `${mode?.label || "Surge"} hazir` : "E ile kullan";
   }
 
   window.StatSystem = { createStatRows, getWeaponName };

@@ -52,6 +52,18 @@ button:focus-visible {
   padding-block: 24px 32px;
 }
 
+.screen-reader-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .topbar {
   display: flex;
   align-items: end;
@@ -363,6 +375,8 @@ canvas {
 .upgrade-body,
 .upgrade-effect,
 .upgrade-synergy,
+.upgrade-build,
+.upgrade-build-detail,
 .relic-body,
 .relic-effect {
   font-size: 0.78rem;
@@ -383,6 +397,36 @@ canvas {
 .upgrade-synergy {
   color: var(--accent-2);
   font-weight: 800;
+}
+
+.upgrade-build {
+  width: fit-content;
+  padding: 3px 7px;
+  border: 1px solid rgba(82, 182, 154, 0.34);
+  border-radius: 6px;
+  color: var(--sea);
+  background: rgba(82, 182, 154, 0.1);
+  font-weight: 900;
+}
+
+.upgrade-build-detail {
+  color: var(--paper);
+  font-weight: 800;
+  opacity: 0.86;
+}
+
+.upgrade-card[data-build="novaLance"] .upgrade-build,
+.upgrade-card[data-build="twinPlasma"] .upgrade-build {
+  border-color: rgba(240, 184, 74, 0.42);
+  color: var(--accent-2);
+  background: rgba(240, 184, 74, 0.12);
+}
+
+.upgrade-card[data-build="phaseBurst"] .upgrade-build,
+.upgrade-card[data-build="piercingLaser"] .upgrade-build {
+  border-color: rgba(217, 251, 255, 0.36);
+  color: #d9fbff;
+  background: rgba(79, 195, 214, 0.12);
 }
 
 .runtime-stats-toggle {
@@ -494,6 +538,26 @@ canvas {
   border-radius: 8px;
   font-size: 1.5rem;
   box-shadow: inset 0 -4px 0 rgba(23, 19, 15, 0.2);
+}
+
+.touch-controls button[hidden] {
+  display: none;
+}
+
+.touch-controls .overdrive-touch {
+  grid-column: 1 / -1;
+  width: 100%;
+  color: var(--paper);
+  background: rgba(35, 53, 46, 0.92);
+  border: 1px solid rgba(240, 184, 74, 0.64);
+  font-size: 0.9rem;
+  letter-spacing: 0;
+}
+
+.touch-controls .overdrive-touch:disabled {
+  color: rgba(242, 223, 182, 0.42);
+  border-color: rgba(242, 223, 182, 0.2);
+  cursor: not-allowed;
 }
 
 @media (max-width: 720px) {

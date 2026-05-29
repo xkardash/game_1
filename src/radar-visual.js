@@ -4,6 +4,7 @@
     elite: "#f0a040",
     enemy: "#d7a64f",
     loot: "#52d6bd",
+    objective: "#b889ff",
     player: "#f2dfb6",
   };
 
@@ -25,6 +26,8 @@
   function drawBlip(context, blip) {
     context.fillStyle = COLORS[blip.kind] || COLORS.enemy;
     if (blip.kind === "player") {
+      context.fillRect(blip.x - 3, blip.y - 3, 6, 6);
+    } else if (blip.kind === "objective") {
       context.fillRect(blip.x - 3, blip.y - 3, 6, 6);
     } else {
       context.beginPath();

@@ -7,6 +7,7 @@
     bindTouchButton("#rightTouch", "right", state, startGame, touchInput);
     bindTouchButton("#upTouch", "up", state, startGame, touchInput);
     bindTouchButton("#downTouch", "down", state, startGame, touchInput);
+    bindOverdriveButton("#overdriveTouch", state, options.activateOverdrive);
     window.ShooterControls.togglePause = togglePause;
   }
 
@@ -15,6 +16,11 @@
     if (event.code === "KeyP" || event.code === "Escape") {
       event.preventDefault();
       togglePause();
+      return;
+    }
+    if (event.code === "KeyE" && state.phase === "playing") {
+      event.preventDefault();
+      options.activateOverdrive?.();
       return;
     }
     pressedKeys.add(event.code);
@@ -37,6 +43,29 @@
     button.addEventListener("pointerup", () => setActive(false));
     button.addEventListener("pointerleave", () => setActive(false));
     button.addEventListener("pointercancel", () => setActive(false));
+  }
+
+  function bindOverdriveButton(buttonId, state, activateOverdrive) {
+    const button = document.querySelector(buttonId);
+    if (!button) return;
+    let pointerHandled = false;
+    const activate = (event) => {
+      event?.preventDefault?.();
+      if (state.phase !== "playing") return;
+      activateOverdrive?.();
+    };
+    button.addEventListener("pointerdown", (event) => {
+      pointerHandled = true;
+      activate(event);
+    });
+    button.addEventListener("click", (event) => {
+      if (pointerHandled) {
+        pointerHandled = false;
+        event.preventDefault?.();
+        return;
+      }
+      activate(event);
+    });
   }
 
   window.ShooterControls = { installControls, togglePause: null };

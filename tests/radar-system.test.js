@@ -39,3 +39,19 @@ test("radar returns readable player, enemy, boss, elite, and loot blips", () => 
   assert.equal(blips.map((blip) => blip.kind).join(","), "player,enemy,boss,elite,loot");
   assert.ok(blips.every((blip) => blip.x >= 0 && blip.x <= 120 && blip.y >= 0 && blip.y <= 120));
 });
+
+test("radar includes the active tactical objective as a distinct blip", () => {
+  const RadarSystem = loadRadarSystem();
+  const state = {
+    player: { x: 880, y: 520 },
+    enemies: [],
+    lootDrops: [],
+    tacticalObjectives: {
+      active: { x: 1320, y: 720, kind: "signalBeacon" },
+    },
+  };
+
+  const blips = RadarSystem.getBlips(state, { width: 1760, height: 1040 }, 120);
+
+  assert.equal(blips.map((blip) => blip.kind).join(","), "player,objective");
+});

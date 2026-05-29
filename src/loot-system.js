@@ -60,11 +60,15 @@
 
   function applyLoot(player, loot, grantXp, grantCore) {
     if (loot.type === "shield") player.shields = Math.min(3, (player.shields || 0) + 1);
-    if (loot.type === "overdrive") player.overdrive = Math.max(player.overdrive || 0, 6);
+    if (loot.type === "overdrive") {
+      player.overdrive = Math.max(player.overdrive || 0, 6);
+      window.OverdriveSystem?.addCharge?.(player, 26);
+    }
     if (loot.type === "repair") player.lives = Math.min(5, player.lives + 1);
     if (loot.type === "core") {
       player.lootCores = (player.lootCores || 0) + 1;
       player.overdrive = Math.max(player.overdrive || 0, 4);
+      window.OverdriveSystem?.addCharge?.(player, 18);
       grantCore(1 + Math.floor((player.coreDropBonus || 0) / 2));
       grantXp(3);
     }

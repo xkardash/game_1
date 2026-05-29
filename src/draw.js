@@ -9,6 +9,7 @@
     context.save();
     context.translate(-camera.x, -camera.y);
     window.LandmarkVisual.drawLandmarks(context, state);
+    window.TacticalObjectiveSystem.drawWorld(context, state);
     drawXpGems(context, state);
     window.PickupVisual.drawLootDrops(context, state);
     window.JuiceVisual.drawCombatPings(context, state);
@@ -20,6 +21,7 @@
     drawEnemies(context, state);
     window.PickupVisual.drawCoreCombatEffects(context, state);
     window.RelicVisual.drawRelicFields(context, state);
+    window.OverdriveSystem.drawWorld(context, state);
     drawEnemyBullets(context, state);
     drawPlayer(context, state);
     drawImpactFlashes(context, state);
@@ -27,7 +29,9 @@
     context.restore();
     window.BossUi.drawBossHud(context, state, viewport);
     window.RelicReveal.drawScreen(context, state, viewport);
+    window.OverdriveSystem.drawHud(context, state, viewport);
     window.RadarVisual.drawRadar(context, state, world, viewport);
+    window.CombatUx.draw(context, state, viewport);
     context.restore();
   }
 

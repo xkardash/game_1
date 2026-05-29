@@ -24,3 +24,30 @@ test("upgrade codex enriches choices with rarity, category, effect, and synergy 
   assert.equal(view.effect, "Hasar +1");
   assert.match(view.synergy, /Delici Lazer/);
 });
+
+test("upgrade views expose build route hints for relic and weapon evolutions", () => {
+  const UpgradeCodex = loadUpgradeCodex();
+
+  const damageView = UpgradeCodex.getUpgradeView({ id: "damage" }, {
+    upgrades: ["rapid"],
+    relics: ["novaCore"],
+  });
+  assert.deepEqual(Array.from(damageView.buildRoutes, (route) => route.id), ["novaLance", "piercingLaser"]);
+  assert.equal(damageView.buildRoutes[0].state, "ready");
+  assert.match(damageView.buildRoutes[0].hint, /Nova Cekirdegi aktif/);
+
+  const rapidView = UpgradeCodex.getUpgradeView({ id: "rapid" }, {
+    upgrades: ["engine"],
+    relics: ["phaseInjector"],
+  });
+  assert.deepEqual(Array.from(rapidView.buildRoutes, (route) => route.id), ["phaseBurst", "droneSupport", "piercingLaser"]);
+  assert.equal(rapidView.buildRoutes[0].state, "ready");
+
+  const magnetView = UpgradeCodex.getUpgradeView({ id: "magnet" }, {
+    upgrades: [],
+    relics: [],
+  });
+  assert.equal(magnetView.buildRoutes[0].id, "voidField");
+  assert.equal(magnetView.buildRoutes[0].state, "relic");
+  assert.match(magnetView.buildRoutes[0].hint, /Bosluk Sifonu ile/);
+});

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Dalga Savunmasi</title>
+    <title></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
@@ -15,6 +15,7 @@
     <script src="src/game-feedback.js" defer></script>
     <script src="src/hangar-system.js" defer></script>
     <script src="src/relic-synergy.js" defer></script>
+    <script src="src/overdrive-system.js" defer></script>
     <script src="src/loot-system.js" defer></script>
     <script src="src/weapon-evolution.js" defer></script>
     <script src="src/upgrade-codex.js" defer></script>
@@ -24,6 +25,8 @@
     <script src="src/run-summary.js" defer></script>
     <script src="src/sector-events.js" defer></script>
     <script src="src/mission-system.js" defer></script>
+    <script src="src/tactical-objective-system.js" defer></script>
+    <script src="src/combat-ux.js" defer></script>
     <script src="src/spawn-director.js" defer></script>
     <script src="src/landmark-system.js" defer></script>
     <script src="src/survival.js" defer></script>
@@ -54,11 +57,11 @@
     <script src="src/test-hooks.js" defer></script>
   </head>
   <body>
-    <main class="shell" aria-label="Dalga Savunmasi arcade oyunu">
+    <main class="shell" aria-label="Uzay arcade oyunu">
       <header class="topbar">
         <div>
           <p class="eyebrow">Survival Auto-Shooter</p>
-          <h1>Dalga Savunmasi</h1>
+          <h1 class="screen-reader-title">Uzay arcade oyunu</h1>
         </div>
         <div class="top-actions" aria-label="Oyun kontrolleri">
           <div class="audio-controls" aria-label="Ses kontrolleri">
@@ -83,6 +86,7 @@
         <span>Tehdit <strong id="threatValue">Dusuk</strong></span>
         <span>Bolge <strong id="landmarkValue">Acik uzay</strong></span>
         <span>Gorev <strong id="missionTitle">Gorev bekleniyor</strong> <em id="missionProgress">-</em></span>
+        <span>Hedef <strong id="objectiveTitle">Hedef yok</strong> <em id="objectiveProgress">-</em></span>
       </section>
 
       <section class="game-frame" aria-label="Oyun alani">
@@ -180,6 +184,7 @@
         <button type="button" id="leftTouch" title="Sola git" aria-label="Sola git">&larr;</button>
         <button type="button" id="downTouch" title="Asagi git" aria-label="Asagi git">&darr;</button>
         <button type="button" id="rightTouch" title="Saga git" aria-label="Saga git">&rarr;</button>
+        <button type="button" id="overdriveTouch" class="overdrive-touch" title="Overdrive" aria-label="Overdrive doluyor" hidden>OD</button>
       </nav>
     </main>
   </body>

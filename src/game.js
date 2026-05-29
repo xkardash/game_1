@@ -12,6 +12,7 @@
   const audioUi = window.AudioUi.createAudioUi(audio);
   const summaryUi = window.RunSummaryUi.createRunSummaryUi();
   const sectorUi = window.SectorUi.createSectorUi();
+  const overdriveTouchButton = document.querySelector("#overdriveTouch");
   const hangar = window.HangarSystem.load();
   const hangarUi = window.HangarUi.createHangarUi();
   const viewport = { width: canvas.width, height: canvas.height };
@@ -48,12 +49,15 @@
       enemies: [],
       lootDrops: [],
       chainArcs: [],
+      overdriveBursts: [],
       relicFields: [],
       relicReveal: null,
       relicRevealBursts: [],
+      uxNotices: [],
       xpGems: [],
       sector: window.SectorEvents.createSectorState(),
       mission: window.MissionSystem.createMissionState(),
+      tacticalObjectives: window.TacticalObjectiveSystem.createObjectiveState(world),
       spawnDirector: window.SpawnDirector.createSpawnDirector(),
       landmarkState: window.LandmarkSystem.createLandmarkState(world),
       particles: [],
@@ -93,6 +97,7 @@
   function update(delta) {
     effects.updateStars(state.stars, world, delta);
     effects.updateTimedEffects(state, delta);
+    window.CombatUx.update(state, delta);
     window.CombatJuice.updatePings(state, delta);
     window.RunSummary.updateRunStats(state.runStats, state, delta);
     if (state.phase === "countdown") updateCountdown(delta);
@@ -121,10 +126,12 @@
     );
     window.SectorEvents.updateSectorEvents(state, delta);
     updateLandmarks(delta);
+    updateTacticalObjectives(delta);
     window.MissionSystem.updateMission(state.mission, state, delta, applyMissionReward);
     lootSystem.updateCoreSynergies(state, effects, delta, destroyEnemy);
     window.GameMotion.updateXpGems(state, delta, rules);
     lootSystem.updateLootDrops(state, delta);
+    window.OverdriveSystem.update(state, delta, effects, destroyEnemy);
     checkCollisions();
     syncInterface();
   }
@@ -149,6 +156,13 @@
     for (const event of window.LandmarkSystem.updateLandmarks(state, delta)) {
       if (event.type === "hazardDamage") damagePlayer();
       if (event.type === "zoneReward") grantLandmarkReward(event);
+    }
+  }
+
+  function updateTacticalObjectives(delta) {
+    for (const event of window.TacticalObjectiveSystem.updateObjectives(state.tacticalObjectives, state, delta)) {
+      if (event.type === "anomalyPressure") handleAnomalyPressure(event);
+      if (event.type === "objectiveReward") grantObjectiveReward(event);
     }
   }
   function updateAutoFire() {
@@ -200,6 +214,7 @@
     state.score += enemy.score;
     window.RunSummary.recordKill(state.runStats, enemy);
     window.MissionSystem.recordKill(state.mission, enemy, applyMissionReward);
+    window.OverdriveSystem.gainFromKill(state, enemy);
     if (enemy.type === "bomber") enemySystem.explodeBomber(state, enemy, effects, damagePlayer);
     lootSystem.dropLoot(state, enemy);
     state.xpGems.push(rules.createXpGem(enemy.x, enemy.y, enemy.xp));
@@ -215,6 +230,7 @@
     state.xpGems = state.xpGems.filter((item) => item !== gem);
     feedback.xpCollect(state, gem);
     window.MissionSystem.recordPickup(state.mission, "xp", applyMissionReward);
+    window.OverdriveSystem.addCharge(state.player, gem.value * 2);
     grantXp(gem.value);
   }
 
@@ -237,6 +253,22 @@
     window.CombatJuice.addPing(state, "loot", state.player.x, state.player.y);
   }
 
+  function grantObjectiveReward(event) {
+    const reward = event.reward;
+    if (reward.xp) grantXp(reward.xp);
+    if (reward.overdriveCharge) window.OverdriveSystem.addCharge(state.player, reward.overdriveCharge);
+    if (reward.shield) state.player.shields = Math.min(3, (state.player.shields || 0) + reward.shield);
+    if (reward.lootType) state.lootDrops.push(window.LootSystem.createLootItem(reward.lootType, event.x, event.y));
+    window.CombatUx.addRewardNotice(state, event);
+    window.CombatJuice.addPing(state, "loot", event.x, event.y);
+    syncInterface();
+  }
+
+  function handleAnomalyPressure(event) {
+    spawnHorde(1);
+    window.CombatJuice.addPing(state, "bossVolley", event.objective.x, event.objective.y);
+  }
+
   function applyMissionReward(reward) {
     if (reward.xp) grantXp(reward.xp);
     if (reward.shield) state.player.shields = Math.min(3, (state.player.shields || 0) + reward.shield);
@@ -246,6 +278,16 @@
   function handleLootCollect(loot) {
     feedback.lootCollect(state, loot);
     window.MissionSystem.recordPickup(state.mission, "loot", applyMissionReward);
+  }
+
+  function activateOverdrive() {
+    const event = window.OverdriveSystem.activate(state, effects, destroyEnemy);
+    if (!event) return;
+    window.CombatJuice.addPing(state, "overdrivePickup", state.player.x, state.player.y, {
+      color: window.OverdriveSystem.getMode(state.player).color,
+      maxRadius: 138,
+    });
+    syncInterface();
   }
 
   function openLevelUp() {
@@ -378,7 +420,14 @@
     syncInterface();
   }
 
-  function syncInterface() { ui.sync(state); audioUi.sync(); hangarUi.sync(state.hangar); summaryUi.sync(state); sectorUi.sync(state); }
+  function syncInterface() {
+    ui.sync(state);
+    audioUi.sync();
+    hangarUi.sync(state.hangar);
+    summaryUi.sync(state);
+    sectorUi.sync(state);
+    window.CombatUx.syncOverdriveButton(overdriveTouchButton, state);
+  }
 
   function hitFirstEnemy() {
     const enemy = state.enemies[0];
@@ -414,8 +463,9 @@
 
   for (const button of hangarUi.buttons) button.element.addEventListener("click", () => { if (window.HangarSystem.buyUpgrade(state.hangar, button.id)) syncInterface(); });
   for (const [index, button] of ui.upgradeButtons.entries()) button.addEventListener("click", () => chooseUpgrade(index));
-  window.ShooterControls.installControls({ chooseUpgrade, pressedKeys, state, startGame, togglePause, touchInput });
+  window.ShooterControls.installControls({ activateOverdrive, chooseUpgrade, pressedKeys, state, startGame, togglePause, touchInput });
   window.DalgaSavunmasiGame = {
+    activateOverdrive,
     chooseUpgrade,
     chooseRelic,
     endGame,

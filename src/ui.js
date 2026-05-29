@@ -85,17 +85,32 @@
       }
 
       const view = window.UpgradeCodex.getUpgradeView(upgrade, player);
+      const primaryBuild = view.buildRoutes?.[0] || null;
       button.disabled = false;
       button.className = "upgrade-card";
       button.dataset.rarity = view.rarity;
-      button.setAttribute("aria-label", `${index + 1}. ${view.title}. ${view.effect}. ${view.synergy || view.body}`);
+      if (primaryBuild) button.dataset.build = primaryBuild.id;
+      else delete button.dataset.build;
+      button.setAttribute("aria-label", getUpgradeAriaLabel(index, view));
       button.append(
         createMetaRow(view),
         createTextElement("upgrade-title", `${index + 1}. ${view.title}`),
         createTextElement("upgrade-body", view.body),
         createTextElement("upgrade-effect", view.effect),
       );
+      if (primaryBuild) {
+        button.append(
+          createTextElement("upgrade-build", `Build: ${primaryBuild.title}`),
+          createTextElement("upgrade-build-detail", primaryBuild.hint),
+        );
+      }
       if (view.synergy) button.append(createTextElement("upgrade-synergy", view.synergy));
+    }
+
+    function getUpgradeAriaLabel(index, view) {
+      const build = view.buildRoutes?.[0];
+      const buildCopy = build ? `Build: ${build.title}. ${build.hint}.` : "";
+      return `${index + 1}. ${view.title}. ${view.effect}. ${buildCopy} ${view.synergy || view.body}`.trim();
     }
 
     function renderRelicCard(button, relic, index, player) {

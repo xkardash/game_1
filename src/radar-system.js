@@ -13,6 +13,9 @@
       blips.push({ kind, ...projectPoint(enemy, world, size) });
     }
     for (const loot of state.lootDrops || []) blips.push({ kind: "loot", ...projectPoint(loot, world, size) });
+    if (state.tacticalObjectives?.active) {
+      blips.push({ kind: "objective", ...projectPoint(state.tacticalObjectives.active, world, size) });
+    }
     return blips;
   }
 

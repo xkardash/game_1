@@ -48,6 +48,10 @@
       lootTypes: [...new Set((state.lootDrops || []).map((loot) => loot.type))].sort().join(","),
       shields: state.player.shields || 0,
       overdriveActive: (state.player.overdrive || 0) > 0,
+      overdriveCharge: Math.round(state.player.overdriveCharge || 0),
+      overdriveReady: Boolean(state.player.overdriveReady),
+      overdriveMode: window.OverdriveSystem?.getMode?.(state.player).id || "",
+      overdriveBursts: (state.overdriveBursts || []).length,
       overdriveTime: Number((state.player.overdrive || 0).toFixed(2)),
       lootCores: state.player.lootCores || 0,
       relicChoices: state.relicChoices.length,
@@ -81,6 +85,16 @@
       missionTitle: state.mission?.active?.title || "",
       missionProgress: state.mission?.active ? `${Math.floor(state.mission.active.progress)}/${state.mission.active.target}` : "",
       completedMissions: state.mission?.completed || 0,
+      objectiveKind: state.tacticalObjectives?.active?.kind || "",
+      objectiveTitle: state.tacticalObjectives?.active?.title || "",
+      objectiveProgress: state.tacticalObjectives?.active
+        ? `${Math.floor(state.tacticalObjectives.active.progress)}/${state.tacticalObjectives.active.target}`
+        : "",
+      objectiveCompleted: state.tacticalObjectives?.completed || 0,
+      objectiveLastReward: state.tacticalObjectives?.lastCompleted?.kind || "",
+      objectivePointer: window.CombatUx?.getObjectivePointer?.(state, game.viewport)?.title || "",
+      overdrivePrompt: window.CombatUx?.getOverdrivePrompt?.(state)?.title || "",
+      uxNotices: (state.uxNotices || []).length,
       meteors: state.enemyBullets.filter((bullet) => bullet.style === "meteor").length,
       pierceRemaining: state.bullets.reduce((total, bullet) => total + (bullet.pierceLeft || 0), 0),
       upgradeChoices: state.upgradeChoices.length,
@@ -92,6 +106,7 @@
 
   window.DalgaSavunmasiTest = {
     chooseUpgrade: window.DalgaSavunmasiGame.chooseUpgrade,
+    activateOverdrive: window.DalgaSavunmasiGame.activateOverdrive,
     endGame: window.DalgaSavunmasiGame.endGame,
     finishWave: window.DalgaSavunmasiGame.finishWave,
     forceBoss: window.DalgaSavunmasiGame.forceBoss,
