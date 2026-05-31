@@ -11,6 +11,30 @@ function loadRunItemSystem() {
   return context.RunItemSystem;
 }
 
+function createDraftPlayer(RunItemSystem, ownedIds = []) {
+  const selection = RunItemSystem.createSelection([
+    "shieldBattery",
+    "repairDrone",
+    "xpCatalyst",
+    "plasmaCartridge",
+    "droneBay",
+    "ricochetNode",
+    "bossTracker",
+    "phaseMesh",
+  ]);
+  return {
+    itemState: {
+      ...RunItemSystem.createItemState(selection),
+      ownedIds,
+    },
+  };
+}
+
+function createSequenceRng(values) {
+  let index = 0;
+  return () => values[Math.min(index++, values.length - 1)];
+}
+
 test("run item pool has 16 items and balanced rarity tier quotas", () => {
   const RunItemSystem = loadRunItemSystem();
   const pool = RunItemSystem.getItemPool();
@@ -86,24 +110,33 @@ test("run items apply effects and activate synergies once both parts are owned",
 
 test("item choices are drawn only from selected and unowned run items", () => {
   const RunItemSystem = loadRunItemSystem();
-  const selection = RunItemSystem.createSelection([
-    "shieldBattery",
-    "repairDrone",
-    "xpCatalyst",
-    "plasmaCartridge",
-    "droneBay",
-    "ricochetNode",
-    "bossTracker",
-    "phaseMesh",
-  ]);
-  const player = {
-    itemState: {
-      ...RunItemSystem.createItemState(selection),
-      ownedIds: ["shieldBattery", "repairDrone", "xpCatalyst", "plasmaCartridge", "droneBay", "ricochetNode"],
-    },
-  };
+  const player = createDraftPlayer(RunItemSystem, ["shieldBattery", "repairDrone", "xpCatalyst", "plasmaCartridge", "droneBay", "ricochetNode"]);
   const choices = RunItemSystem.createItemChoices(player, 2, () => 0);
 
   assert.deepEqual(Array.from(choices, (choice) => choice.id).sort(), ["bossTracker", "phaseMesh"]);
   assert.ok(choices.every((choice) => choice.choiceType === "item"));
+});
+
+test("item reward rarity rolls use 40/30/20/10 odds", () => {
+  const RunItemSystem = loadRunItemSystem();
+  const cases = [
+    { roll: 0.05, rarity: "common" },
+    { roll: 0.45, rarity: "rare" },
+    { roll: 0.75, rarity: "epic" },
+    { roll: 0.95, rarity: "legendary" },
+  ];
+
+  for (const itemCase of cases) {
+    const choices = RunItemSystem.createItemChoices(createDraftPlayer(RunItemSystem), 1, createSequenceRng([itemCase.roll, 0]));
+    assert.equal(choices[0].rarity, itemCase.rarity);
+  }
+});
+
+test("item reward rolls fall back when the rolled rarity is unavailable", () => {
+  const RunItemSystem = loadRunItemSystem();
+  const player = createDraftPlayer(RunItemSystem, ["shieldBattery", "repairDrone"]);
+  const choices = RunItemSystem.createItemChoices(player, 1, createSequenceRng([0.05, 0]));
+
+  assert.equal(choices.length, 1);
+  assert.notEqual(choices[0].rarity, "common");
 });

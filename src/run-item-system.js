@@ -6,6 +6,12 @@
     epic: 2,
     legendary: 2,
   };
+  const ITEM_CHOICE_RATES = {
+    common: 0.4,
+    rare: 0.3,
+    epic: 0.2,
+    legendary: 0.1,
+  };
   const MAX_SELECTED_ITEMS = getMaxSelectedItems();
   const ITEM_POOL = [
     {
@@ -274,12 +280,13 @@
 
   function createItemChoices(player, count, rng = Math.random) {
     const available = getAvailableItems(player);
-    const shuffled = [...available].sort((first, second) => {
-      const firstScore = getItemWeight(first, player) + rng();
-      const secondScore = getItemWeight(second, player) + rng();
-      return secondScore - firstScore;
-    });
-    return shuffled.slice(0, count).map((item) => getItemView(item, player));
+    const choices = [];
+    for (let index = 0; index < count; index += 1) {
+      const next = chooseWeightedItem(available, choices, player, rng);
+      if (!next) break;
+      choices.push(next);
+    }
+    return choices.map((item) => getItemView(item, player));
   }
 
   function getItemView(itemLike, player = null) {
@@ -387,11 +394,54 @@
     };
   }
 
+  function chooseWeightedItem(available, choices, player, rng) {
+    const alreadyChosen = new Set(choices.map((item) => item.id));
+    const remaining = available.filter((item) => !alreadyChosen.has(item.id));
+    if (remaining.length === 0) return null;
+    const rarity = chooseAvailableRarity(remaining, rng());
+    const candidates = remaining.filter((item) => item.rarity === rarity);
+    return chooseItemFromRarity(candidates.length > 0 ? candidates : remaining, player, rng);
+  }
+
+  function chooseAvailableRarity(items, roll) {
+    const availableRarities = new Set(items.map((item) => item.rarity));
+    for (const rarity of getRarityRollOrder(roll)) {
+      if (availableRarities.has(rarity)) return rarity;
+    }
+    return items[0].rarity;
+  }
+
+  function getRarityRollOrder(roll) {
+    const primary = getRolledRarity(roll);
+    const primaryIndex = RARITY_ORDER.indexOf(primary);
+    return [
+      primary,
+      ...RARITY_ORDER.slice(primaryIndex + 1),
+      ...RARITY_ORDER.slice(0, primaryIndex),
+    ];
+  }
+
+  function getRolledRarity(roll) {
+    let threshold = 0;
+    for (const rarity of RARITY_ORDER) {
+      threshold += ITEM_CHOICE_RATES[rarity];
+      if (roll < threshold) return rarity;
+    }
+    return "legendary";
+  }
+
+  function chooseItemFromRarity(items, player, rng) {
+    return [...items].sort((first, second) => {
+      const firstScore = getItemWeight(first, player) + rng() * 0.01;
+      const secondScore = getItemWeight(second, player) + rng() * 0.01;
+      return secondScore - firstScore || first.id.localeCompare(second.id);
+    })[0] || null;
+  }
+
   function getItemWeight(item, player) {
     const owned = new Set(player?.itemState?.ownedIds || []);
     const synergyBonus = SYNERGIES.some((synergy) => synergy.itemIds.includes(item.id) && synergy.itemIds.some((id) => owned.has(id))) ? 0.55 : 0;
-    const rarityBonus = item.rarity === "legendary" ? 0.18 : item.rarity === "epic" ? 0.12 : item.rarity === "rare" ? 0.06 : 0;
-    return synergyBonus + rarityBonus;
+    return synergyBonus;
   }
 
   function getSynergyPreview(item, player) {
