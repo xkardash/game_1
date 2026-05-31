@@ -1,20 +1,22 @@
 (() => {
   const rules = window.SurvivalRules;
+  const runItemSystem = window.RunItemSystem;
 
   function updateEnemies(state, delta, damagePlayer) {
     applyCaptainAuras(state);
     for (const enemy of state.enemies) {
       if (enemy.type === "sniper") updateSniper(enemy, state, delta);
-      else updateChaser(enemy, state.player, delta);
+      else updateChaser(enemy, state, delta);
       enemy.pulse += delta * enemy.pulseRate;
       enemy.fireCooldown = Math.max(0, enemy.fireCooldown - delta);
       if (rules.overlaps(enemy, rules.getBounds(state.player))) damagePlayer();
     }
   }
 
-  function updateChaser(enemy, player, delta) {
+  function updateChaser(enemy, state, delta) {
+    const player = state.player;
     const direction = rules.getUnitVector(enemy, player);
-    const speed = getEffectiveSpeed(enemy);
+    const speed = getEffectiveSpeed(enemy, state);
     enemy.x += direction.x * speed * delta;
     enemy.y += direction.y * speed * delta;
   }
@@ -24,7 +26,7 @@
     const distance = rules.getDistance(enemy, player);
     const direction = rules.getUnitVector(enemy, player);
     const range = enemy.preferredRange;
-    const speed = getEffectiveSpeed(enemy);
+    const speed = getEffectiveSpeed(enemy, state);
     if (distance > range + 36) {
       enemy.x += direction.x * speed * delta;
       enemy.y += direction.y * speed * delta;
@@ -56,8 +58,9 @@
     }
   }
 
-  function getEffectiveSpeed(enemy) {
-    return enemy.speed * (enemy.speedMultiplier || 1);
+  function getEffectiveSpeed(enemy, state) {
+    const slowScale = runItemSystem?.getSlowScale?.(state.player, enemy) || 1;
+    return enemy.speed * (enemy.speedMultiplier || 1) * slowScale;
   }
 
   function fireSniperShot(enemy, state) {

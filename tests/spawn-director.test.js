@@ -38,7 +38,7 @@ test("spawn plans respect enemy caps and trigger boss waves", () => {
   const SpawnDirector = loadSpawnDirector();
   const director = SpawnDirector.createSpawnDirector();
   const state = {
-    wave: 2,
+    wave: 9,
     phase: "playing",
     enemies: Array.from({ length: 2 }, () => ({ type: "scout" })),
     runStats: { seconds: 28 },
@@ -52,7 +52,8 @@ test("spawn plans respect enemy caps and trigger boss waves", () => {
   assert.ok(plan.spawnCount <= plan.difficulty.enemyCap - state.enemies.length);
   assert.equal(plan.advanceWave, true);
   assert.equal(plan.spawnBoss, true);
-  assert.equal(plan.nextWave, 3);
+  assert.equal(plan.nextWave, 10);
+  assert.equal(plan.bossTier, "major");
 });
 
 test("spawn plan pauses cleanly outside playing phase", () => {
@@ -62,4 +63,15 @@ test("spawn plan pauses cleanly outside playing phase", () => {
 
   assert.equal(plan.spawnCount, 0);
   assert.equal(plan.advanceWave, false);
+});
+
+test("every fifth wave is a swarm pressure spike", () => {
+  const SpawnDirector = loadSpawnDirector();
+  const normal = SpawnDirector.getDifficulty(4, 60);
+  const swarm = SpawnDirector.getDifficulty(5, 60);
+
+  assert.equal(normal.swarmWave, false);
+  assert.equal(swarm.swarmWave, true);
+  assert.ok(swarm.packSize > normal.packSize);
+  assert.ok(swarm.enemyCap > normal.enemyCap);
 });

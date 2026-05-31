@@ -185,6 +185,18 @@
         drawMeteor(context, bullet);
         continue;
       }
+      if (bullet.style === "ionBolt") {
+        drawIonBolt(context, bullet);
+        continue;
+      }
+      if (bullet.style === "riftMine") {
+        drawRiftMine(context, bullet);
+        continue;
+      }
+      if (bullet.style === "plasmaWall") {
+        drawPlasmaWall(context, bullet);
+        continue;
+      }
       const trailX = bullet.vx * -0.052;
       const trailY = bullet.vy * -0.052;
       context.globalAlpha = 0.34;
@@ -219,24 +231,137 @@
   }
 
   function drawMeteor(context, bullet) {
+    const angle = Math.atan2(bullet.vy, bullet.vx) - Math.PI / 2;
     context.save();
     context.translate(bullet.x, bullet.y);
-    context.rotate(0.7);
-    context.globalAlpha = 0.38;
+    context.rotate(angle);
+
+    context.globalAlpha = 0.2;
     context.fillStyle = bullet.trailColor;
-    context.fillRect(-5, -42, 10, 38);
+    context.beginPath();
+    context.ellipse(0, -32, 10, 34, 0, 0, Math.PI * 2);
+    context.fill();
+    context.globalAlpha = 0.34;
+    context.fillStyle = bullet.color;
+    context.beginPath();
+    context.ellipse(0, -16, 15, 24, 0, 0, Math.PI * 2);
+    context.fill();
+
+    context.globalAlpha = 0.58;
+    context.strokeStyle = bullet.trailColor;
+    context.lineWidth = 2;
+    for (let index = 0; index < 3; index += 1) {
+      const offset = (index - 1) * 8;
+      context.beginPath();
+      context.moveTo(offset, -42 - index * 5);
+      context.lineTo(offset * 0.45, -18 - index * 2);
+      context.stroke();
+    }
+
     context.globalAlpha = 1;
     context.fillStyle = "#5a2f22";
     context.beginPath();
-    context.moveTo(0, -11);
-    context.lineTo(13, -2);
-    context.lineTo(8, 12);
-    context.lineTo(-8, 12);
-    context.lineTo(-14, -3);
+    context.moveTo(-3, -15);
+    context.lineTo(12, -8);
+    context.lineTo(15, 3);
+    context.lineTo(7, 14);
+    context.lineTo(-6, 16);
+    context.lineTo(-15, 7);
+    context.lineTo(-13, -7);
     context.closePath();
     context.fill();
+
+    context.fillStyle = "#2f1c18";
+    context.beginPath();
+    context.moveTo(-9, -7);
+    context.lineTo(2, -12);
+    context.lineTo(10, -4);
+    context.lineTo(3, 4);
+    context.lineTo(-8, 3);
+    context.closePath();
+    context.fill();
+
+    context.strokeStyle = bullet.color;
+    context.lineWidth = 2;
+    context.globalAlpha = 0.82;
+    context.beginPath();
+    context.moveTo(-5, -4);
+    context.lineTo(2, 1);
+    context.lineTo(8, -3);
+    context.moveTo(-2, 8);
+    context.lineTo(5, 5);
+    context.stroke();
+
     context.fillStyle = bullet.color;
-    context.fillRect(-4, -5, 8, 8);
+    context.globalAlpha = 0.9;
+    context.beginPath();
+    context.arc(5, 1, 4, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  }
+
+  function drawIonBolt(context, bullet) {
+    const angle = Math.atan2(bullet.vy, bullet.vx);
+    context.save();
+    context.translate(bullet.x, bullet.y);
+    context.rotate(angle);
+    context.globalAlpha = 0.5;
+    context.strokeStyle = bullet.trailColor;
+    context.lineWidth = 8;
+    context.beginPath();
+    context.moveTo(-30, 0);
+    context.lineTo(18, 0);
+    context.stroke();
+    context.globalAlpha = 1;
+    context.strokeStyle = bullet.color;
+    context.lineWidth = 3;
+    context.beginPath();
+    context.moveTo(-12, -5);
+    context.lineTo(0, 0);
+    context.lineTo(-12, 5);
+    context.moveTo(-2, 0);
+    context.lineTo(24, 0);
+    context.stroke();
+    context.restore();
+  }
+
+  function drawRiftMine(context, bullet) {
+    context.save();
+    context.translate(bullet.x, bullet.y);
+    context.strokeStyle = bullet.color;
+    context.fillStyle = bullet.color;
+    context.lineWidth = 3;
+    context.globalAlpha = 0.42;
+    context.beginPath();
+    context.arc(0, 0, bullet.width / 2, 0, Math.PI * 2);
+    context.fill();
+    context.globalAlpha = 0.88;
+    context.beginPath();
+    context.arc(0, 0, bullet.width / 2.7, 0, Math.PI * 2);
+    context.stroke();
+    context.rotate((bullet.life || 0) * 2.2);
+    context.strokeStyle = bullet.trailColor;
+    context.beginPath();
+    context.moveTo(-bullet.width / 2, 0);
+    context.lineTo(bullet.width / 2, 0);
+    context.moveTo(0, -bullet.width / 2);
+    context.lineTo(0, bullet.width / 2);
+    context.stroke();
+    context.restore();
+  }
+
+  function drawPlasmaWall(context, bullet) {
+    context.save();
+    context.translate(bullet.x, bullet.y);
+    context.globalAlpha = 0.28;
+    context.fillStyle = bullet.trailColor;
+    context.fillRect(-bullet.width / 2 - 8, -bullet.height / 2, bullet.width + 16, bullet.height);
+    context.globalAlpha = 0.86;
+    context.fillStyle = bullet.color;
+    context.fillRect(-bullet.width / 2, -bullet.height / 2, bullet.width, bullet.height);
+    context.globalAlpha = 1;
+    context.fillStyle = "#f2dfb6";
+    context.fillRect(-3, -bullet.height / 2, 6, bullet.height);
     context.restore();
   }
 
@@ -288,5 +413,5 @@
     context.globalAlpha = 1;
   }
 
-  window.ShooterDraw = { drawGame };
+  window.ShooterDraw = { drawGame, drawMeteorHazard: drawMeteor };
 })();

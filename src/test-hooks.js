@@ -7,6 +7,7 @@
     const screen = window.ShooterCamera.toScreen(state.camera, state.player);
     const evolution = window.WeaponEvolution.getWeaponEvolution(state.player);
     const relicSynergies = window.RelicSynergy?.getActiveSynergies?.(state.player) || [];
+    const itemSynergies = window.RunItemSystem?.getActiveSynergies?.(state.player) || [];
     return {
       phase: state.phase,
       trailColor: state.trailColor,
@@ -79,6 +80,8 @@
       threatLabel: state.spawnDirector?.lastDifficulty?.threatLabel || "",
       enemyCap: state.spawnDirector?.lastDifficulty?.enemyCap || 0,
       spawnInterval: state.spawnDirector?.lastDifficulty?.spawnInterval || 0,
+      swarmWave: Boolean(state.spawnDirector?.lastDifficulty?.swarmWave),
+      bossTier: state.enemies.find((enemy) => enemy.type === "boss")?.bossTier || state.spawnDirector?.lastDifficulty?.bossTier || "",
       landmarkZone: state.landmarkState?.activeZone?.id || "",
       landmarks: state.landmarkState?.landmarks?.length || 0,
       landmarkRewardCharge: Number((state.landmarkState?.rewardCharge || 0).toFixed(2)),
@@ -95,9 +98,19 @@
       objectivePointer: window.CombatUx?.getObjectivePointer?.(state, game.viewport)?.title || "",
       overdrivePrompt: window.CombatUx?.getOverdrivePrompt?.(state)?.title || "",
       uxNotices: (state.uxNotices || []).length,
+      challengeHazards: state.enemyBullets.filter((bullet) => ["ionBolt", "meteor", "plasmaWall", "riftMine"].includes(bullet.style)).length,
+      ionBolts: state.enemyBullets.filter((bullet) => bullet.style === "ionBolt").length,
       meteors: state.enemyBullets.filter((bullet) => bullet.style === "meteor").length,
+      plasmaWalls: state.enemyBullets.filter((bullet) => bullet.style === "plasmaWall").length,
+      riftMines: state.enemyBullets.filter((bullet) => bullet.style === "riftMine").length,
       pierceRemaining: state.bullets.reduce((total, bullet) => total + (bullet.pierceLeft || 0), 0),
+      itemPoolSize: window.RunItemSystem?.getItemPool?.().length || 0,
+      itemSynergies: itemSynergies.map((synergy) => synergy.id).join(","),
+      ownedItemCount: state.player.itemState?.ownedIds?.length || 0,
+      ownedItems: (state.player.itemState?.ownedIds || []).join(","),
+      selectedItemCount: state.itemSelection?.selectedIds?.length || 0,
       upgradeChoices: state.upgradeChoices.length,
+      upgradeChoiceTypes: state.upgradeChoices.map((choice) => choice.choiceType || "stat").join(","),
       upgradeCount: state.player.upgrades.length,
       spaceObjects: state.spaceObjects.length,
       starLayers: new Set(state.stars.map((star) => star.layer)).size,

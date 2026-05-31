@@ -8,6 +8,7 @@
   const feedback = window.GameFeedback.createGameFeedback(audio, window.CombatJuice);
   const lootSystem = window.LootSystem;
   const rules = window.SurvivalRules;
+  const runItemSystem = window.RunItemSystem;
   const ui = window.ShooterUi.createGameUi();
   const audioUi = window.AudioUi.createAudioUi(audio);
   const summaryUi = window.RunSummaryUi.createRunSummaryUi();
@@ -21,8 +22,11 @@
   const touchInput = { left: false, right: false, up: false, down: false };
   const state = createInitialState();
 
-  function createInitialState(highScore = 0, selectedShip = "aegis", trailColor = null) {
-    const player = rules.createPlayer(world, selectedShip);
+  function createInitialState(highScore = 0, selectedShip = "aegis", trailColor = null, itemSelection = null) {
+    const actualItemSelection = runItemSystem
+      ? runItemSystem.createSelection(itemSelection?.selectedIds || itemSelection || undefined)
+      : null;
+    const player = rules.createPlayer(world, selectedShip, actualItemSelection);
     player.trailHistory = [];
     window.HangarSystem.applyBonuses(player, hangar);
     const camera = cameraTools.createCamera(viewport, world);
@@ -33,6 +37,7 @@
       countdown: 0,
       score: 0,
       highScore,
+      itemSelection: actualItemSelection,
       selectedShip,
       trailColor: actualTrailColor,
       wave: 1,
@@ -80,12 +85,22 @@
   }
 
   function resetRound() {
-    Object.assign(state, createInitialState(state.highScore, state.selectedShip || "aegis", state.trailColor));
+    Object.assign(state, createInitialState(state.highScore, state.selectedShip || "aegis", state.trailColor, state.itemSelection));
     spawnHorde(8);
   }
 
-  function startGame() { audio.unlock(); resetRound(); beginCountdown(); }
-  function startPlaying() { resetRound(); state.phase = "playing"; syncInterface(); }
+  function startGame() {
+    if (!canLaunchRun()) return;
+    audio.unlock();
+    resetRound();
+    beginCountdown();
+  }
+  function startPlaying() {
+    if (!canLaunchRun()) return;
+    resetRound();
+    state.phase = "playing";
+    syncInterface();
+  }
   function beginCountdown() { state.phase = "countdown"; state.countdown = 1.8; syncInterface(); }
   function loop(timestamp) {
     const delta = Math.min((timestamp - state.lastFrameTime) / 1000 || 0, 0.033);
@@ -149,7 +164,8 @@
     if (plan.spawnCount > 0) spawnHorde(plan.spawnCount, plan.difficulty);
     if (!plan.advanceWave) return;
     state.wave = plan.nextWave;
-    if (plan.spawnBoss) spawnBoss();
+    if (plan.swarmWave) spawnHorde(plan.difficulty.packSize + 5, plan.difficulty);
+    if (plan.spawnBoss) spawnBoss(plan.bossTier);
   }
 
   function updateLandmarks(delta) {
@@ -199,7 +215,8 @@
     bullet.hitEnemyIds = [...(bullet.hitEnemyIds || []), enemy.id];
     if (bullet.pierceLeft > 0) bullet.pierceLeft -= 1;
     else state.bullets = state.bullets.filter((item) => item !== bullet);
-    enemy.hp -= bullet.damage;
+    const damage = enemy.type === "boss" ? bullet.damage * (bullet.bossDamageScale || 1) : bullet.damage;
+    enemy.hp -= damage;
     enemy.flash = 0.16;
     state.shake = Math.max(state.shake, enemy.type === "boss" ? 0.24 : 0.12);
     effects.addImpactFlash(state, enemy.x, enemy.y, enemy.type === "boss" ? "#f0b84a" : "#e8573f");
@@ -235,7 +252,7 @@
   }
 
   function grantXp(amount) {
-    state.xp += amount;
+    state.xp += runItemSystem?.scaleXp?.(state.player, amount) || amount;
     if (state.xp >= state.xpNeeded && state.phase === "playing") openLevelUp();
     syncInterface();
   }
@@ -257,7 +274,7 @@
     const reward = event.reward;
     if (reward.xp) grantXp(reward.xp);
     if (reward.overdriveCharge) window.OverdriveSystem.addCharge(state.player, reward.overdriveCharge);
-    if (reward.shield) state.player.shields = Math.min(3, (state.player.shields || 0) + reward.shield);
+    if (reward.shield) state.player.shields = Math.min(4, (state.player.shields || 0) + reward.shield);
     if (reward.lootType) state.lootDrops.push(window.LootSystem.createLootItem(reward.lootType, event.x, event.y));
     window.CombatUx.addRewardNotice(state, event);
     window.CombatJuice.addPing(state, "loot", event.x, event.y);
@@ -271,7 +288,7 @@
 
   function applyMissionReward(reward) {
     if (reward.xp) grantXp(reward.xp);
-    if (reward.shield) state.player.shields = Math.min(3, (state.player.shields || 0) + reward.shield);
+    if (reward.shield) state.player.shields = Math.min(4, (state.player.shields || 0) + reward.shield);
     if (reward.overdrive) state.player.overdrive = Math.max(state.player.overdrive || 0, reward.overdrive);
   }
 
@@ -344,6 +361,11 @@
   function damagePlayer() {
     const player = state.player;
     if (player.invulnerable > 0 || state.phase !== "playing") return;
+    if (runItemSystem?.rollDodge?.(player)) {
+      player.invulnerable = 0.42;
+      effects.emitParticles(state, player.x, player.y, "#d9fbff", 12, { life: 0.24, size: 2 });
+      return;
+    }
     if (lootSystem.absorbShield(player)) {
       effects.emitParticles(state, player.x, player.y, "#4fc3d6", 18, { life: 0.32, size: 3 });
       feedback.shieldAbsorb(state);
@@ -398,11 +420,20 @@
     }
   }
 
-  function spawnBoss() { state.enemies.push(rules.createEnemy(world, state.wave, "boss", state.player, viewport)); }
+  function spawnBoss(tier = "") {
+    const boss = rules.createEnemy(world, state.wave, "boss", state.player, viewport);
+    if (tier) {
+      boss.bossTier = tier;
+      boss.majorBoss = tier === "major";
+    }
+    state.enemies.push(boss);
+  }
 
   function finishWave() {
     state.wave += 1;
-    spawnHorde(8 + state.wave);
+    const difficulty = window.SpawnDirector.getDifficulty(state.wave, state.runStats?.seconds || 0);
+    spawnHorde(8 + state.wave + (difficulty.swarmWave ? 6 : 0), difficulty);
+    if (difficulty.bossWave) spawnBoss(difficulty.bossTier);
     syncInterface();
   }
 
@@ -429,6 +460,24 @@
     window.CombatUx.syncOverdriveButton(overdriveTouchButton, state);
   }
 
+  function canLaunchRun() {
+    if (!runItemSystem) return true;
+    if (runItemSystem.isSelectionReady(state.itemSelection)) return true;
+    state.itemSelection = {
+      ...(state.itemSelection || runItemSystem.createSelection([])),
+      message: "Run baslamadan once her nadirlikten 2 esya sec.",
+    };
+    syncInterface();
+    return false;
+  }
+
+  function toggleDraftItem(itemId) {
+    if (!runItemSystem || !["ready", "gameOver"].includes(state.phase)) return;
+    state.itemSelection = runItemSystem.toggleSelection(state.itemSelection, itemId);
+    state.player.itemState = runItemSystem.createItemState(state.itemSelection);
+    syncInterface();
+  }
+
   function hitFirstEnemy() {
     const enemy = state.enemies[0];
     if (!enemy) return;
@@ -441,6 +490,14 @@
   ui.actionButton.addEventListener("click", startGame);
   const dbLaunchBtn = document.querySelector("#dbLaunchButton");
   if (dbLaunchBtn) dbLaunchBtn.addEventListener("click", startGame);
+  const itemDraftGrid = document.querySelector("#itemDraftGrid");
+  if (itemDraftGrid) {
+    itemDraftGrid.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-item-id]");
+      if (!button || !itemDraftGrid.contains(button)) return;
+      toggleDraftItem(button.dataset.itemId);
+    });
+  }
   const aegisBtn = document.querySelector("#ship-aegis");
   if (aegisBtn) aegisBtn.addEventListener("click", () => { state.selectedShip = "aegis"; resetRound(); syncInterface(); });
   const dreadnoughtBtn = document.querySelector("#ship-dreadnought");
@@ -477,6 +534,7 @@
     start: startGame,
     startPlaying,
     state,
+    toggleDraftItem,
     viewport,
     world,
   };

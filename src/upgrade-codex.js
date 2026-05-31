@@ -73,6 +73,7 @@
     { ids: ["damage", "split"], title: "Ikiz Plazma" },
     { ids: ["engine", "rapid"], title: "Drone Destegi" },
   ];
+  const runItemSystem = window.RunItemSystem;
   const BUILD_ROUTES = [
     {
       id: "novaLance",
@@ -121,12 +122,26 @@
     },
   ];
 
-  function createChoices(playerLevel, player = null) {
+  function createChoices(playerLevel, player = null, rng = Math.random) {
+    if (runItemSystem?.hasActiveSelection?.(player)) return createMixedChoices(playerLevel, player, rng);
+    return createStatChoices(playerLevel, player, 3);
+  }
+
+  function createMixedChoices(playerLevel, player, rng) {
+    const availableItems = runItemSystem.getAvailableItems(player);
+    const itemCount = Math.min(availableItems.length, rng() < 0.5 ? 2 : 1);
+    const statChoices = createStatChoices(playerLevel, player, 3 - itemCount);
+    const itemChoices = runItemSystem.createItemChoices(player, itemCount, rng);
+    return [...itemChoices, ...statChoices].slice(0, 3);
+  }
+
+  function createStatChoices(playerLevel, player = null, count = 3) {
     const offset = playerLevel % UPGRADE_POOL.length;
-    return [0, 1, 2].map((step) => getUpgradeView(UPGRADE_POOL[(offset + step * 2) % UPGRADE_POOL.length], player));
+    return Array.from({ length: count }, (_, step) => getUpgradeView(UPGRADE_POOL[(offset + step * 2) % UPGRADE_POOL.length], player));
   }
 
   function getUpgradeView(upgrade, player = null) {
+    if (upgrade?.choiceType === "item" && runItemSystem) return runItemSystem.getItemView(upgrade, player);
     const source = getUpgradeById(upgrade.id) || upgrade;
     const rarity = source.rarity || "common";
     return {

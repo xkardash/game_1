@@ -7,12 +7,15 @@ function loadUpgradeCodex() {
   const context = { console };
   context.window = context;
   vm.createContext(context);
+  if (fs.existsSync("src/run-item-system.js")) {
+    vm.runInContext(fs.readFileSync("src/run-item-system.js", "utf8"), context, { filename: "src/run-item-system.js" });
+  }
   vm.runInContext(fs.readFileSync("src/upgrade-codex.js", "utf8"), context, { filename: "src/upgrade-codex.js" });
-  return context.UpgradeCodex;
+  return { UpgradeCodex: context.UpgradeCodex, RunItemSystem: context.RunItemSystem };
 }
 
 test("upgrade codex enriches choices with rarity, category, effect, and synergy preview", () => {
-  const UpgradeCodex = loadUpgradeCodex();
+  const { UpgradeCodex } = loadUpgradeCodex();
   const player = { upgrades: ["rapid"] };
   const choices = UpgradeCodex.createChoices(2, player);
   const damage = choices[0];
@@ -26,7 +29,7 @@ test("upgrade codex enriches choices with rarity, category, effect, and synergy 
 });
 
 test("upgrade views expose build route hints for relic and weapon evolutions", () => {
-  const UpgradeCodex = loadUpgradeCodex();
+  const { UpgradeCodex } = loadUpgradeCodex();
 
   const damageView = UpgradeCodex.getUpgradeView({ id: "damage" }, {
     upgrades: ["rapid"],
@@ -50,4 +53,32 @@ test("upgrade views expose build route hints for relic and weapon evolutions", (
   assert.equal(magnetView.buildRoutes[0].id, "voidField");
   assert.equal(magnetView.buildRoutes[0].state, "relic");
   assert.match(magnetView.buildRoutes[0].hint, /Bosluk Sifonu ile/);
+});
+
+test("level-up choices mix stat upgrades with lucky run item rewards", () => {
+  const { UpgradeCodex, RunItemSystem } = loadUpgradeCodex();
+  const player = {
+    relics: [],
+    upgrades: ["rapid"],
+    itemState: RunItemSystem.createItemState(RunItemSystem.createSelection([
+      "shieldBattery",
+      "repairDrone",
+      "xpCatalyst",
+      "plasmaCartridge",
+      "droneBay",
+      "ricochetNode",
+      "bossTracker",
+      "phaseMesh",
+    ])),
+  };
+  const choices = UpgradeCodex.createChoices(4, player, () => 0.2);
+  const choiceTypes = choices.map((choice) => choice.choiceType || "stat");
+
+  assert.equal(choices.length, 3);
+  assert.equal(choiceTypes.filter((type) => type === "item").length, 2);
+  assert.equal(choiceTypes.filter((type) => type === "stat").length, 1);
+
+  const itemView = UpgradeCodex.getUpgradeView(choices.find((choice) => choice.choiceType === "item"), player);
+  assert.equal(itemView.category, "Esya");
+  assert.ok(itemView.effect.length > 0);
 });

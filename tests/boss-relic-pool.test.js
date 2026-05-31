@@ -32,13 +32,15 @@ test("boss enemies receive deterministic reward archetypes", () => {
   const player = { x: 500, y: 350 };
   const viewport = { width: 960, height: 540 };
 
-  const first = SurvivalRules.createEnemy(world, 3, "boss", player, viewport);
-  const second = SurvivalRules.createEnemy(world, 6, "boss", player, viewport);
-  const third = SurvivalRules.createEnemy(world, 9, "boss", player, viewport);
+  const first = SurvivalRules.createEnemy(world, 10, "boss", player, viewport);
+  const second = SurvivalRules.createEnemy(world, 20, "boss", player, viewport);
+  const third = SurvivalRules.createEnemy(world, 30, "boss", player, viewport);
 
   assert.equal(first.bossArchetype, "bulwark");
   assert.equal(second.bossArchetype, "phase");
   assert.equal(third.bossArchetype, "core");
+  assert.equal(first.bossTier, "major");
+  assert.ok(second.maxHp > first.maxHp);
   assert.equal(third.rewardTag, "Core Anomalisi");
 });
 

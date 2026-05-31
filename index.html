@@ -18,6 +18,7 @@
     <script src="src/overdrive-system.js" defer></script>
     <script src="src/loot-system.js" defer></script>
     <script src="src/weapon-evolution.js" defer></script>
+    <script src="src/run-item-system.js" defer></script>
     <script src="src/upgrade-codex.js" defer></script>
     <script src="src/stat-system.js" defer></script>
     <script src="src/relic-system.js" defer></script>
@@ -143,6 +144,14 @@
             <div class="db-card stats-sec">
               <h3>Gemi Statları</h3>
               <div class="stat-grid dashboard-stat-grid" id="dashboardStatsList" aria-live="polite"></div>
+            </div>
+
+            <div class="db-card item-sec">
+              <div class="item-draft-header">
+                <h3>Run Esya Havuzu</h3>
+                <span id="itemDraftCounter">8/8 esya secildi</span>
+              </div>
+              <div class="item-draft-grid" id="itemDraftGrid" aria-label="Run item secimi"></div>
             </div>
           </div>
 

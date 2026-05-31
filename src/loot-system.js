@@ -24,7 +24,8 @@
 
   function dropLoot(state, enemy) {
     const type = enemy.affix === "coreCarrier" ? "core" : getDropType(enemy);
-    if (type) state.lootDrops.push(createLootItem(type, enemy.x, enemy.y));
+    const bonusType = type || getLuckDropType(state.player);
+    if (bonusType) state.lootDrops.push(createLootItem(bonusType, enemy.x, enemy.y));
   }
 
   function updateLootDrops(state, delta) {
@@ -59,12 +60,12 @@
   }
 
   function applyLoot(player, loot, grantXp, grantCore) {
-    if (loot.type === "shield") player.shields = Math.min(3, (player.shields || 0) + 1);
+    if (loot.type === "shield") player.shields = Math.min(4, (player.shields || 0) + 1);
     if (loot.type === "overdrive") {
       player.overdrive = Math.max(player.overdrive || 0, 6);
       window.OverdriveSystem?.addCharge?.(player, 26);
     }
-    if (loot.type === "repair") player.lives = Math.min(5, player.lives + 1);
+    if (loot.type === "repair") player.lives = Math.min(player.maxLives || 5, player.lives + 1);
     if (loot.type === "core") {
       player.lootCores = (player.lootCores || 0) + 1;
       player.overdrive = Math.max(player.overdrive || 0, 4);
@@ -97,6 +98,13 @@
     if (enemy.type === "sniper") return "overdrive";
     if (enemy.type === "bomber") return "repair";
     return null;
+  }
+
+  function getLuckDropType(player) {
+    const lootLuck = player?.itemEffects?.lootLuck || 0;
+    if (lootLuck <= 0 || Math.random() >= lootLuck) return null;
+    const deck = ["shield", "overdrive", "repair"];
+    return deck[Math.floor(Math.random() * deck.length)];
   }
 
   function igniteEnemy(enemy, bullet) {

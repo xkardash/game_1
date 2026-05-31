@@ -15,6 +15,9 @@
 
     const dashboard = document.querySelector("#dashboard");
     const dashboardStatsList = document.querySelector("#dashboardStatsList");
+    const dashboardLaunchButton = document.querySelector("#dbLaunchButton");
+    const itemDraftCounter = document.querySelector("#itemDraftCounter");
+    const itemDraftGrid = document.querySelector("#itemDraftGrid");
     const runtimeStatsToggle = document.querySelector("#runtimeStatsToggle");
     const runtimeStatsPanel = document.querySelector("#runtimeStatsPanel");
     let lastDashboardStatsSignature = "";
@@ -38,8 +41,12 @@
       xpValue.textContent = `${state.xp}/${state.xpNeeded}`;
       bestValue.textContent = String(state.highScore);
       overlay.classList.toggle("is-hidden", ["playing", "ready", "gameOver"].includes(state.phase));
+      const launchLocked = ["ready", "gameOver"].includes(state.phase) && !isItemSelectionReady(state);
+      actionButton.disabled = launchLocked;
+      if (dashboardLaunchButton) dashboardLaunchButton.disabled = launchLocked;
       if (dashboard) {
         dashboard.classList.toggle("is-hidden", !["ready", "gameOver"].includes(state.phase));
+        syncItemDraft(state);
         const aegisBtn = document.querySelector("#ship-aegis");
         const dreadnoughtBtn = document.querySelector("#ship-dreadnought");
         if (aegisBtn && dreadnoughtBtn) {
@@ -136,6 +143,44 @@
       if (view.synergy) button.append(createTextElement("upgrade-synergy", view.synergy));
     }
 
+    function syncItemDraft(state) {
+      if (!itemDraftGrid || !itemDraftCounter || !window.RunItemSystem) return;
+      const selection = state.itemSelection || window.RunItemSystem.createSelection();
+      const selectedIds = new Set(selection.selectedIds || []);
+      const summary = window.RunItemSystem.getSelectionSummary(selection);
+      const canEdit = ["ready", "gameOver"].includes(state.phase);
+      itemDraftCounter.textContent = getItemDraftCounterText(summary);
+      itemDraftGrid.replaceChildren(...window.RunItemSystem.getItemPool().map((item) => createItemDraftButton(item, selectedIds, canEdit)));
+    }
+
+    function createItemDraftButton(item, selectedIds, canEdit) {
+      const selected = selectedIds.has(item.id);
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "item-draft-btn";
+      button.dataset.itemId = item.id;
+      button.dataset.rarity = item.rarity;
+      button.dataset.selected = selected ? "true" : "false";
+      button.disabled = !canEdit;
+      button.setAttribute("aria-pressed", selected ? "true" : "false");
+      button.setAttribute("aria-label", `${item.title}. ${getItemRarityLabel(item)}. ${item.effect}. ${selected ? "Secili" : "Secili degil"}`);
+      button.append(
+        createTextElement("item-draft-title", item.title),
+        createTextElement("item-draft-effect", item.effect),
+        createTextElement("item-draft-rarity", getItemRarityLabel(item)),
+      );
+      return button;
+    }
+
+    function getItemRarityLabel(item) {
+      return window.RunItemSystem.getItemView(item).rarityLabel;
+    }
+
+    function getItemDraftCounterText(summary) {
+      const tiers = summary.tiers.map((tier) => `${tier.label} ${tier.selected}/${tier.required}`).join(" | ");
+      return `${summary.total}/${summary.maxItems} esya secildi | ${tiers}`;
+    }
+
     function createRelicMetaRow(view) {
       const row = document.createElement("span");
       row.className = "upgrade-meta relic-meta";
@@ -209,6 +254,11 @@
     }
 
     return { actionButton, hangarReturnButton, sync, upgradeButtons };
+  }
+
+  function isItemSelectionReady(state) {
+    if (!window.RunItemSystem) return true;
+    return window.RunItemSystem.isSelectionReady(state.itemSelection || window.RunItemSystem.createSelection());
   }
 
   function getPhaseCopy(state) {

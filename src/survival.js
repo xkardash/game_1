@@ -15,10 +15,14 @@
   const ROLE_SEQUENCE = ["scout", "tank", "sniper", "bomber"];
   const upgradeCodex = window.UpgradeCodex;
   const weaponEvolution = window.WeaponEvolution;
+  const runItemSystem = window.RunItemSystem;
   let nextEnemyId = 1;
 
-  function createPlayer(world, shipType = "aegis") {
+  function createPlayer(world, shipType = "aegis", itemSelection = null) {
     const isDreadnought = shipType === "dreadnought";
+    const itemState = runItemSystem
+      ? runItemSystem.createItemState(itemSelection || runItemSystem.createSelection())
+      : { appliedSynergyIds: [], ownedIds: [], selectedIds: [] };
     return {
       x: world.width / 2,
       y: world.height / 2,
@@ -26,8 +30,11 @@
       height: 56,
       speed: isDreadnought ? 250 : 315,
       lives: 3,
+      maxLives: 5,
       cooldown: 0,
       invulnerable: 0,
+      itemEffects: {},
+      itemState,
       lootCores: 0,
       overdrive: 0,
       overdriveCharge: 0,
@@ -53,7 +60,9 @@
     const role = isBoss ? null : ENEMY_ROLES[normalizeEnemyType(type)];
     const bossArchetype = isBoss ? getBossArchetype(wave) : null;
     const bossProfile = bossArchetype ? BOSS_ARCHETYPES[bossArchetype] : null;
-    const hp = isBoss ? Math.round((22 + wave * 6) * bossProfile.hpScale) : role.hp + Math.floor(wave / 2);
+    const majorBoss = isBoss && wave % 10 === 0;
+    const bossTierScale = majorBoss ? 1.38 : 1;
+    const hp = isBoss ? Math.round((22 + wave * 6) * bossProfile.hpScale * bossTierScale) : role.hp + Math.floor(wave / 2);
     return {
       id: nextEnemyId++,
       ...position,
@@ -61,12 +70,14 @@
       height: isBoss ? 66 : role.height,
       hp,
       maxHp: hp,
-      speed: isBoss ? Math.round((54 + wave * 2) * bossProfile.speedScale) : role.speed + wave * 4,
+      speed: isBoss ? Math.round((54 + wave * 2) * bossProfile.speedScale * (majorBoss ? 1.08 : 1)) : role.speed + wave * 4,
       type: isBoss ? "boss" : normalizeEnemyType(type),
       bossArchetype,
+      bossTier: majorBoss ? "major" : "minor",
+      majorBoss,
       rewardTag: bossProfile?.rewardTag || "",
-      xp: isBoss ? 10 + wave * 2 : role.xp,
-      score: isBoss ? 1200 + wave * 160 : role.score + wave * 12,
+      xp: isBoss ? Math.round((10 + wave * 2) * (majorBoss ? 1.2 : 1)) : role.xp,
+      score: isBoss ? Math.round((1200 + wave * 160) * (majorBoss ? 1.25 : 1)) : role.score + wave * 12,
       pulse: Math.random() * Math.PI,
       pulseRate: isBoss ? 4 : role.pulseRate,
       flash: 0,
@@ -88,7 +99,7 @@
   }
 
   function getBossArchetype(wave) {
-    const bossIndex = Math.max(0, Math.floor(wave / 3) - 1);
+    const bossIndex = Math.max(0, Math.floor(wave / 10) - 1);
     return BOSS_ARCHETYPE_SEQUENCE[bossIndex % BOSS_ARCHETYPE_SEQUENCE.length];
   }
 
@@ -140,6 +151,11 @@
       bullets.push(createProjectile(player, rotateVector(direction, -0.08), profile, -42, 0, "drone", 0.62));
       bullets.push(createProjectile(player, rotateVector(direction, 0.08), profile, 42, 0, "drone", 0.62));
     }
+    for (let index = 0; index < Math.floor(player.itemEffects?.extraDroneShots || 0); index += 1) {
+      const side = index % 2 === 0 ? -1 : 1;
+      const offset = 30 + Math.floor(index / 2) * 16;
+      bullets.push(createProjectile(player, rotateVector(direction, side * 0.11), profile, side * offset, 8, "drone", 0.52));
+    }
     if (profile.coreDroneShots) {
       bullets.push(createProjectile(player, rotateVector(direction, 0), profile, 0, 18, "coreDrone", 0.48));
     }
@@ -155,6 +171,9 @@
     const isCoreDrone = origin === "coreDrone";
     const speed = isDrone ? profile.droneSpeed : profile.speed;
     const damage = player.stats.damage * (profile.damageScale || 1) * damageScale;
+    const itemEffects = player.itemEffects || {};
+    const chainDamageScale = (profile.chainDamageScale || 0) + (itemEffects.chainDamageScale || 0);
+    const chainRange = Math.max(profile.chainRange || 0, itemEffects.chainRange || 0);
     return {
       x: player.x + offsetX,
       y: player.y + offsetY,
@@ -166,11 +185,12 @@
       life: profile.life || 1.6,
       areaDamage: isDrone ? 0 : damage * (profile.areaDamageScale || 0),
       areaRange: isDrone ? 0 : profile.areaRange || 0,
-      burnDamage: isDrone ? 0 : profile.burnDamage || 0,
-      burnTime: isDrone ? 0 : profile.burnTime || 0,
-      chainDamage: isDrone ? 0 : player.stats.damage * (profile.chainDamageScale || 0),
-      chainRange: isDrone ? 0 : profile.chainRange || 0,
-      chainsLeft: isDrone ? 0 : profile.chainTargets || 0,
+      bossDamageScale: isDrone ? 1 : runItemSystem?.getBossDamageScale?.(player) || 1,
+      burnDamage: isDrone ? 0 : Math.max(profile.burnDamage || 0, itemEffects.burnDamage || 0),
+      burnTime: isDrone ? 0 : Math.max(profile.burnTime || 0, itemEffects.burnTime || 0),
+      chainDamage: isDrone ? 0 : player.stats.damage * chainDamageScale,
+      chainRange: isDrone ? 0 : chainRange,
+      chainsLeft: isDrone ? 0 : (profile.chainTargets || 0) + (itemEffects.chainTargets || 0),
       color: isCoreDrone ? "#f2dfb6" : (isDrone ? "#7df8ff" : profile.color),
       style: isCoreDrone ? "coreDrone" : (isDrone ? "droneLaser" : profile.style),
       trailColor: isCoreDrone ? "#52d6bd" : (isDrone ? "#4fc3d6" : profile.trailColor),
@@ -184,13 +204,17 @@
   }
 
   function applyUpgrade(player, upgrade) {
+    if (upgrade.choiceType === "item" && runItemSystem) {
+      runItemSystem.applyItem(player, upgrade);
+      return;
+    }
     player.upgrades.push(upgrade.id);
     if (upgrade.stat === "fireRate") player.stats.fireRate = Math.max(0.12, player.stats.fireRate + upgrade.amount);
     if (upgrade.stat === "projectileCount") player.stats.projectileCount = Math.min(5, player.stats.projectileCount + upgrade.amount);
     if (upgrade.stat === "damage") player.stats.damage += upgrade.amount;
     if (upgrade.stat === "speed") player.speed += upgrade.amount;
     if (upgrade.stat === "magnet") player.stats.magnet += upgrade.amount;
-    if (upgrade.stat === "repair") player.lives = Math.min(5, player.lives + upgrade.amount);
+    if (upgrade.stat === "repair") player.lives = Math.min(player.maxLives || 5, player.lives + upgrade.amount);
   }
 
   function getMountedWeaponCount(player) {
